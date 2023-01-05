@@ -1,0 +1,34 @@
+{
+  "name": "game_tu_chan__api_nodejs",
+  "version": "1.0.0",
+  "description": "Project - Specialized topics",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TKOGNISHU/Game_Tu_Chan__API_NodeJS.git"
+  },
+  "keywords": [
+    "js",
+    "nodejs",
+    "node",
+    "expressjs",
+    "express",
+    "game",
+    "tu",
+    "chan"
+  ],
+  "author": "Tran Chi Hoa",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/TKOGNISHU/Game_Tu_Chan__API_NodeJS/issues"
+  },
+  "homepage": "https://github.com/TKOGNISHU/Game_Tu_Chan__API_NodeJS#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "morgan": "^1.10.0",
+    "nodemon": "^2.0.20"
+  }
+}
