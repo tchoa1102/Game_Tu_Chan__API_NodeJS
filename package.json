@@ -28,6 +28,7 @@
   "homepage": "https://github.com/TKOGNISHU/Game_Tu_Chan__API_NodeJS#readme",
   "dependencies": {
     "express": "^4.18.2",
+    "mongoose": "^6.9.2",
     "morgan": "^1.10.0",
     "nodemon": "^2.0.20"
   }
