@@ -4,6 +4,7 @@
   "description": "Project - Specialized topics",
   "main": "src/index.js",
   "scripts": {
+    "start": "nodemon --inspect src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
