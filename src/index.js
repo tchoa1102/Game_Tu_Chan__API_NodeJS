@@ -9,7 +9,7 @@ const path = require('path')
 const keyPath = path.join(__dirname, '../.env')
 
 if (fs.existsSync(keyPath)) {
-    console.log(keyPath, 'dotenv is exists!')
+    console.log('dotenv is exists!')
     require(keyPath)
 }
 
