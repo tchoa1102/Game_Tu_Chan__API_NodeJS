@@ -8,11 +8,20 @@ const User = new Schema({
     bag: {
         items: [{
             ref: 'Item',
+            quantity: Number
+        }],
+        skills: [{
+            ref: 'Skill',
+            quantity: Number,
+            trainings: {}
         }],
         equipments: [{
             ref: 'Equipment',
+            quantity: Number,
+            wears: {}
         }],
-    }
+    },
+    excursions: { type: Object, } // history excursion
 })
 
 module.exports = mongoose.model('User', User)

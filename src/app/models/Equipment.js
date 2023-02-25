@@ -9,7 +9,7 @@ const Equipment = new Schema({
     property: Property,
     level: { type: Number, required: true, default: 0 },
     requiredLevel: { type: String, required: true, default: 'Luyện Khí tầng 1'},
-    durability: { type: Number, required: true, default: 100, },
+    durability: { type: Number, required: true, default: 100, }, // 
 })
 
 module.exports = mongoose.model('Equipment', Equipment)
