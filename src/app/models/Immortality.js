@@ -8,7 +8,7 @@ const Immortality = new Schema({
     index: { type: Number, },
     level: { type: String, },
     avatar: { type: String, },
-    
+
     hp: { type: Number, default: 100, },
     mp: { type: Number, default: 100, },
     currentlyHP: { type: Number, default: 100, },
@@ -17,8 +17,8 @@ const Immortality = new Schema({
     ATK: { type: Number, default: 100, },
     INT: { type: Number, default: 100, }, // magic attack
     DEF: { type: Number, default: 100, }, // defense
-    ACC: { type: Number, default: 100, }, // Accuracy
-    AGI: { type: Number, default: 100, }, // Agility ~= Speed, thân pháp
+    ACC: { type: Number, default: 1, }, // Accuracy, độ chính xác => cường độ thần thức
+    AGI: { type: Number, default: 1, }, // Agility ~= Speed => thân pháp
 
     equipments: {
         auxiliaries: [],
@@ -36,3 +36,8 @@ const Immortality = new Schema({
 })
 
 module.exports = mongoose.model('immortality', Immortality)
+
+/**
+ * Công vật lí: (ATK + attack_base_of_sKill) * (ACC / AGI) - DEF
+ * Công phép: (INT + attack_base_of_sKill) * (ACC / AGI) - DEF
+ */

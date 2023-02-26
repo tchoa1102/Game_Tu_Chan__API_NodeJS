@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const SkillController = require('../app/controllers/skillController')
 
-router.get('/', SkillController.create)
+router.patch('/update/:id', SkillController.update)
+router.post('/create', SkillController.create)
 
 module.exports = router

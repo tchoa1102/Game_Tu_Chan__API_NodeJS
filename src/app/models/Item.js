@@ -3,8 +3,9 @@ const Schema = mongoose.Schema
 
 const Item = new Schema({
     name: { type: String, },
-    indicator: { type: Number, },
+    value: { type: Number, },
     quantity: { type: Number, },
+    description: { type: String, },
 })
 
 module.exports = mongoose.model('Item', Item)
