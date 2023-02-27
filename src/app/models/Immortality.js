@@ -1,13 +1,18 @@
 const mongoose = require('mongoose')
 const Schema = mongoose.Schema
+const ObjectId = mongoose.ObjectId
 
 const Skill = require('./Skill')
 
 const Immortality = new Schema({
+    user: { type: ObjectId, ref: 'User' },
     name: { type: String, },
     index: { type: Number, },
-    level: { type: String, },
-    avatar: { type: String, },
+    level: { type: Object, default: {
+        name: 'Luyện Khí kì',
+        level: 'Tầng 1',
+    },},
+    avatar: { type: String, default: 'monk' },
 
     hp: { type: Number, default: 100, },
     mp: { type: Number, default: 100, },
@@ -28,6 +33,7 @@ const Immortality = new Schema({
     skills: { type: Object, }
     /**
      * "skill name": {
+     *      type: ObjectId,
             ref: 'Skill',
             floor: { type: String, }, // currently floor
             exp: { type: Number, } // how long have you been training? (%)

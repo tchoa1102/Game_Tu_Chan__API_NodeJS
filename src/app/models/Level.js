@@ -3,7 +3,16 @@ const Schema = mongoose.Schema
 
 const Level = new Schema({
     name: String,
-    increase: Number,
+    levels: { type: Object, default: {} },
+    /**
+     * {
+     *  "Tầng 1": {
+     *      name: "Tầng 1",
+     *      increase: 10,
+     *   }
+     * }
+     */
+    // increase: Number,
 })
 
 module.exports = mongoose.model('Level', Level)

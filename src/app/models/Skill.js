@@ -6,10 +6,7 @@ const Floor = require('../schemas/Floor')
 
 const Skill = new Schema({
     name: { type: String, required: true, },
-    style: { type: String, default: '', },
-    animation: { type: String, default: '', },
-    delay: { type: Number, default: 1000, },
-    requirements: { type: Array, default: [], },
+    description: { type: String, default: '', },
 
     floors: [{ type: Floor, default: () => ({})}]
 })

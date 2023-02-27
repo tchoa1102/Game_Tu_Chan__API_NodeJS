@@ -11,6 +11,7 @@ const State = new Schema({
     style: { type: String, },
     animation: { type: String, },
     property: { type: Property, default: () => ({}),},
+    timeline: { type: Number, }, // số lượt tồn tại
 })
 
 module.exports = State
