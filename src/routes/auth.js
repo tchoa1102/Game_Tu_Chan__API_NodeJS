@@ -25,6 +25,5 @@ router.get(
 router.get('/federated/google/success', authController.oAuthSuccess)
 router.get('/federated/google/failure', authController.oAuthFailure)
 router.get('/logout', authController.logout)
-router.get('/user', authController.show)
 
 module.exports = router

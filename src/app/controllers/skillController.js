@@ -1,7 +1,7 @@
 const Skill = require('../models/Skill')
 
 class SkillController {
-    // [POST] /skills/create
+    // [POST] /api/skills/create
     async create(req, res, next) {
         const data = req.body
         // data.floors = null
@@ -21,10 +21,10 @@ class SkillController {
         })
     }
 
-    // [PATCH] /skills/update/:id
+    // [PATCH] /api/skills/update/:id
     async update(req, res, next) {}
 
-    // [PATCH] /skills/update/:id/name
+    // [PATCH] /api/skills/update/:id/name
     async updateFloor(req, res, next) {}
 }
 

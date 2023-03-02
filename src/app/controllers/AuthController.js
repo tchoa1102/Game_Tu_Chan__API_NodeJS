@@ -22,25 +22,6 @@ class AuthController {
         // res.redirect('back')
         return res.json()
     }
-
-    // [GET] /api/auth/user
-    async show(req, res, next) {
-        console.log("\n\n\nGet user...")
-        try {
-            // console.log("Auth", req.session.passport.user.emails)
-            if (req.session.passport?.user) {
-                console.log('json')
-                let user = await User.findOne({ _id: req.session.passport.user._id })
-
-                user = mergeObject(req.session.passport.user, user)
-
-                return res.json(user)
-            } else return res.json()
-        } catch (err) {
-            console.log(err)
-            return res.status(500).json()
-        }
-    }
 }
 
 module.exports = new AuthController()

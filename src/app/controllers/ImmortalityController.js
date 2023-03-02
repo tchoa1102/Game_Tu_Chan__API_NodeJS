@@ -1,7 +1,7 @@
 const Immortality = require('../models/Immortality')
 
 class ImmortalityController {
-    // [POST] /users/:id/immortalities/create
+    // [POST] /api/users/:id/immortalities/create
     async create(req, res, next) {
         const data = req.body
 

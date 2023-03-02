@@ -2,6 +2,11 @@ const mongoose = require('mongoose')
 const Schema = mongoose.Schema
 const ObjectId = mongoose.ObjectId
 
+// Schema register for model
+const Item = require('./Item')
+const Skill = require('./Skill')
+const Equipment = require('./Equipment')
+
 const User = new Schema({
     name: { type: String, },
     email: { type: String, },
@@ -9,19 +14,25 @@ const User = new Schema({
     spiritStone: { type: Number, },
     bag: {
         items: [{
-            type: ObjectId,
-            ref: 'Item',
+            item: {
+                type: ObjectId,
+                ref: 'Item',
+            },
             quantity: Number
         }],
         skills: [{
-            type: ObjectId,
-            ref: 'Skill',
+            skill: {
+                type: ObjectId,
+                ref: 'Skill',
+            },
             quantity: Number,
             trainings: {}
         }],
         equipments: [{
-            type: ObjectId,
-            ref: 'Equipment',
+            equip: {
+                type: ObjectId,
+                ref: 'Equipment',
+            },
             quantity: Number,
             wears: {}
         }],
