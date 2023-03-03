@@ -13,7 +13,7 @@ class SkillController {
             // console.log(skill)
             const result = await skill.save()
         } catch (error) {
-            console.log(error)
+            next(error)
         }
 
         return res.json({

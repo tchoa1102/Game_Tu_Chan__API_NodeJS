@@ -19,6 +19,7 @@ passport.serializeUser((user, done) => {
     User.findOne({ _id: ObjectId(user.id) })
         .then((currentUser) => {
             if (currentUser) {
+                console.log(user)
                 const u = mergeObject(user, currentUser)
                 console.log("\n\nUser: ", u)
                 done(null, u)
@@ -27,7 +28,7 @@ passport.serializeUser((user, done) => {
                     _id: ObjectId(user.id),
                     name: user.displayName,
                     email: user.email,
-                    image: user.picture,
+                    avatar: user.picture,
                     birth: '',
                 }
                 const newUser = new User(data)

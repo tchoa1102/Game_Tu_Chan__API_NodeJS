@@ -6,6 +6,7 @@ const ImmortalityController = require('../app/controllers/ImmortalityController'
 
 // [GET]
 router.get('/whoami', UserController.get)
+router.get('/:id/immortalities', ImmortalityController.getImmortalities)
 // [POST]
 router.post('/:id/immortalities/create', ImmortalityController.create)
 

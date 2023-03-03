@@ -3,10 +3,8 @@ module.exports = {
         target.name = source.name
         target.id = source.id
         target._id = source._id
-        target.birth = source.birth
         target.role = source.role
-        target.image = source.image
-        target.follows = source.follows
+        target.avatar = source.avatar
         return target
     },
 }

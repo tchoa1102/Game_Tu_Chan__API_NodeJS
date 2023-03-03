@@ -11,11 +11,20 @@ class ImmortalityController {
 
             return res.json(result)
         } catch (error) {
-            console.log(error)
+            next(error)
+        }
+    }
 
-            return res.status(500).json({
-                message: 'ERROR!!!'
-            })
+    // [GET] /api/users/:id/immortalities
+    async getImmortalities(req, res, next) {
+        const id = req.params.id
+
+        try {
+            const result = await Immortality.find({user: id})
+            console.log(result)
+            return res.json(result)
+        } catch (error) {
+            next(error)
         }
     }
 }

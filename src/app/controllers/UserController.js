@@ -29,11 +29,8 @@ class UserController {
             } else return res.status(400).json({
                 message: 'Bạn chưa đăng nhập!'
             })
-        } catch (err) {
-            console.log(err)
-            return res.status(500).json({
-                message: 'Có lỗi xảy ra!'
-            })
+        } catch (error) {
+            next(error)
         }
     }
 }

@@ -9,6 +9,7 @@ const Equipment = require('./Equipment')
 
 const User = new Schema({
     name: { type: String, },
+    avatar: { type: String, },
     email: { type: String, },
     level: { type: String, },
     spiritStone: { type: Number, },
