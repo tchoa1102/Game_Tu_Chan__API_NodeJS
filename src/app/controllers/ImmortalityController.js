@@ -1,4 +1,6 @@
 const Immortality = require('../models/Immortality')
+const Avatar = require('../models/Avatar')
+const Skill = require('../models/Skill')
 
 class ImmortalityController {
     // [POST] /api/users/:id/immortalities/create
@@ -20,8 +22,19 @@ class ImmortalityController {
         const id = req.params.id
 
         try {
-            const result = await Immortality.find({user: id})
-            console.log(result)
+            const result = await Immortality.find({user: id}).lean()
+            for(let e of result) {
+                const avatar = await Avatar.findOne({name: e.avatar})
+                e.effects = avatar.effects
+
+                for(let key in e.skills) {
+                    const skill = await Skill.findOne({name: key})
+                    e.skills[key].description = skill.description
+                    e.skills[key].floor = skill.floors.find((floor) => floor.name == e.skills[key].floor)
+                }
+            }
+
+            // console.log(result)
             return res.json(result)
         } catch (error) {
             next(error)
