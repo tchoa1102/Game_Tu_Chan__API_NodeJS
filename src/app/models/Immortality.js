@@ -6,6 +6,7 @@ const Skill = require('./Skill')
 
 const Immortality = new Schema({
     user: { type: ObjectId, ref: 'User' },
+    clusterQuest: { type: ObjectId, ref: 'Quest.clusters' },
     name: { type: String, },
     index: { type: Number, },
     level: { type: Object, default: {

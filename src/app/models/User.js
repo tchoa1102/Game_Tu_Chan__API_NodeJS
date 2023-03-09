@@ -38,7 +38,7 @@ const User = new Schema({
             wears: {}
         }],
     },
-    excursions: { type: Object, } // history excursion
+    quests: { type: Object, } // history excursion
 })
 
 module.exports = mongoose.model('User', User)
