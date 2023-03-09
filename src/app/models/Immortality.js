@@ -5,8 +5,7 @@ const ObjectId = mongoose.ObjectId
 const Skill = require('./Skill')
 
 const Immortality = new Schema({
-    user: { type: ObjectId, ref: 'User' },
-    clusterQuest: { type: ObjectId, ref: 'Quest.clusters' },
+    user: { type: ObjectId, },
     name: { type: String, },
     index: { type: Number, },
     level: { type: Object, default: {
@@ -42,7 +41,7 @@ const Immortality = new Schema({
      */
 })
 
-module.exports = mongoose.model('immortality', Immortality)
+module.exports = mongoose.model('Immortality', Immortality)
 
 /**
  * Công vật lí: (ATK + attack_base_of_sKill) * (ACC / AGI) - DEF

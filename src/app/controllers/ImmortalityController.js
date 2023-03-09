@@ -3,20 +3,6 @@ const Avatar = require('../models/Avatar')
 const Skill = require('../models/Skill')
 
 class ImmortalityController {
-    // [POST] /api/users/:id/immortalities/create
-    async create(req, res, next) {
-        const data = req.body
-
-        try {
-            const immortality = new Immortality(data)
-            const result = await immortality.save()
-
-            return res.json(result)
-        } catch (error) {
-            next(error)
-        }
-    }
-
     // [GET] /api/users/:id/immortalities
     async getImmortalities(req, res, next) {
         const id = req.params.id
@@ -40,6 +26,22 @@ class ImmortalityController {
             next(error)
         }
     }
+
+    // [POST] /api/users/:id/immortalities/create
+    async create(req, res, next) {
+        const data = req.body
+
+        try {
+            const immortality = new Immortality(data)
+            const result = await immortality.save()
+
+            return res.json(result)
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    
 }
 
 module.exports = new ImmortalityController

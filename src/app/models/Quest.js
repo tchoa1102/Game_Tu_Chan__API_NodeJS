@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const Schema = mongoose.Schema
 
 const Cluster = require('../schemas/Cluster')
+const Immortality = require('./Immortality')
 
 const Quest = new Schema({
     name: String,

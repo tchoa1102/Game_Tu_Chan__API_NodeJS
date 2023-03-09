@@ -2,9 +2,38 @@ const Quest = require('../models/Quest')
 const Immortality = require('../models/Immortality')
 
 class QuestController {
+    // [GET] /api/quests
+    async get(req, res, next) {
+        try {
+            const quest = await Quest.find({}, '_id name front')
+
+            return res.json(quest)
+        } catch (error) {
+            return next(error)
+        }
+    }
+
     // [GET] /api/quests/:id
     async getQuest(req, res, next) {
-        
+        const id = req.params.id
+
+        try {
+            const result = await Quest.findById(id).populate({
+                path: 'clusters.immortalities',
+            }).populate({
+                path: 'clusters.awards.items',
+                populate: { path: 'item', },
+            }).populate({
+                path: 'clusters.awards.skills',
+                populate: { path: 'skill', },
+            }).populate({
+                path: 'clusters.awards.equipments',
+                populate: { path: 'equipment', },
+            })
+            return res.json(result)
+        } catch (error) {
+            return next(error)
+        }
     }
 
     // [POST] /api/quests
