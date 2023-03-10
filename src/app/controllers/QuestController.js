@@ -1,5 +1,6 @@
 const Quest = require('../models/Quest')
 const Immortality = require('../models/Immortality')
+const Setup = require('../models/Setup')
 
 class QuestController {
     // [GET] /api/quests
@@ -18,6 +19,9 @@ class QuestController {
         const id = req.params.id
 
         try {
+            const setup = await Setup.findOne().lean()
+            const levels = setup.levels
+
             const result = await Quest.findById(id).populate({
                 path: 'clusters.immortalities',
             }).populate({
@@ -29,7 +33,31 @@ class QuestController {
             }).populate({
                 path: 'clusters.awards.equipments',
                 populate: { path: 'equipment', },
+            }).lean()
+
+            result.clusters.forEach(cluster => {
+                const largestImmortality = cluster.immortalities.reduce((largest, e) => {
+                    const largestLevel = largest.level
+                    const levelCurrent = e.level
+
+                    if (
+                        levels[largestLevel.name].index < levels[levelCurrent.name].index
+                    ) {
+                        largest = {...e}
+                    } else if (
+                        levels[largestLevel.name].index == levels[levelCurrent.name].index
+                    ) {
+                        if (levels[largestLevel.name][largestLevel.level] < levels[levelCurrent.name][levelCurrent.level]) {
+                            largest = {...e}
+                        }
+                    }
+
+                    return largest
+                }, new Object(cluster.immortalities[0]))
+
+                cluster.maxLevel = largestImmortality.level ? {...largestImmortality.level} : {name: 'Luyện Khí Kì', level: 'Tầng 1'}
             })
+
             return res.json(result)
         } catch (error) {
             return next(error)
