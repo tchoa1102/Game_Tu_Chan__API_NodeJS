@@ -1,6 +1,12 @@
+const mongoose = require('mongoose')
+const ObjectId = mongoose.Types.ObjectId
+
 const Quest = require('../models/Quest')
 const Immortality = require('../models/Immortality')
 const Setup = require('../models/Setup')
+const User = require('../models/User')
+
+
 
 class QuestController {
     // [GET] /api/quests
@@ -19,8 +25,7 @@ class QuestController {
         const id = req.params.id
 
         try {
-            const setup = await Setup.findOne().lean()
-            const levels = setup.levels
+            const { levels } = await Setup.findOne().lean()
 
             const result = await Quest.findById(id).populate({
                 path: 'clusters.immortalities',
@@ -37,30 +42,83 @@ class QuestController {
 
             result.clusters.forEach(cluster => {
                 const largestImmortality = cluster.immortalities.reduce((largest, e) => {
-                    const largestLevel = largest.level
-                    const levelCurrent = e.level
-
-                    if (
-                        levels[largestLevel.name].index < levels[levelCurrent.name].index
-                    ) {
-                        largest = {...e}
-                    } else if (
-                        levels[largestLevel.name].index == levels[levelCurrent.name].index
-                    ) {
-                        if (levels[largestLevel.name][largestLevel.level] < levels[levelCurrent.name][levelCurrent.level]) {
-                            largest = {...e}
-                        }
-                    }
+                    // find largest level
+                    largest = {...this.findLargestLevel(levels, largest, e)}
 
                     return largest
                 }, new Object(cluster.immortalities[0]))
 
-                cluster.maxLevel = largestImmortality.level ? {...largestImmortality.level} : {name: 'Luyện Khí Kì', level: 'Tầng 1'}
+                cluster.maxLevel = largestImmortality.level ? {...largestImmortality.level} 
+                                    : {name: 'Luyện Khí Kì', level: 'Tầng 1'}
             })
 
             return res.json(result)
         } catch (error) {
             return next(error)
+        }
+
+        function findLargestLevel(levels, largest, source) {
+            const largestLevel = largest.level
+            const levelCurrent = source.level
+    
+            if (
+                levels[largestLevel.name].index < levels[levelCurrent.name].index
+            ) {
+                largest = {...source}
+            } else if (
+                levels[largestLevel.name].index == levels[levelCurrent.name].index
+            ) {
+                if (levels[largestLevel.name][largestLevel.level].index < levels[levelCurrent.name][levelCurrent.level].index) {
+                    largest = {...source}
+                }
+            }
+    
+            return largest
+        }
+    }
+
+    // [GET] /api/quests/:idQuest/clusters/:idCluster/fight
+    async fight(req, res, next) {
+        const idQuest = req.params.idQuest
+        const idCluster = req.params.idCluster
+
+        try {
+            const idUser = '117658907214625686230111' || req.session.passport.user._id
+
+            const { levels } = await Setup.findOne().lean()
+            const immortalitiesUser = await Immortality.find({user: idUser})
+            console.log(immortalitiesUser)
+            console.log(levels)
+
+            const currentImmortality = immortalitiesUser[0]
+            Object.keys(levels).forEach( nameLevel => {
+                Object.keys(levels[nameLevel]).forEach( step => {
+                    if (isLargerOrEqual(levels, currentImmortality.level, nameLevel, step)) {
+                        Object.keys(currentImmortality.status).forEach( property => {
+                            const eraseX = levels[nameLevel][step].increase.substr(1)
+                            const increase = Number.parseFloat(eraseX)
+                            currentImmortality.status[property] *= increase
+                        })
+                    }
+                })
+            })
+
+            return res.json({})
+        } catch (error) {
+            return next(error)
+        }
+
+        function isLargerOrEqual(levels, target, nameLevel, step) {
+            if (levels[target.name].index > levels[nameLevel].index) {
+                return true
+            } else if (
+                levels[target.name].index == levels[nameLevel].index &&
+                levels[target.name][target.level].index >= levels[nameLevel][step].index 
+            ) {
+                return true
+            }
+
+            return false
         }
     }
 

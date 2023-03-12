@@ -14,16 +14,21 @@ const Immortality = new Schema({
     },},
     avatar: { type: String, default: 'monk' },
 
-    hp: { type: Number, default: 100, },
-    mp: { type: Number, default: 100, },
-    currentlyHP: { type: Number, default: 100, },
-    currentlyMP: { type: Number, default: 100, },
+    currentlyStatus: { type: Object, default: {
+        currentlyHP: { type: Number, default: 100, },
+        currentlyMP: { type: Number, default: 100, },
+    } },
 
-    ATK: { type: Number, default: 100, },
-    INT: { type: Number, default: 100, }, // magic attack
-    DEF: { type: Number, default: 100, }, // defense
-    ACC: { type: Number, default: 1, }, // Accuracy, độ chính xác => cường độ thần thức
-    AGI: { type: Number, default: 1, }, // Agility ~= Speed => thân pháp
+    status: { type: Object, default: {
+        hp: { type: Number, default: 100, },
+        mp: { type: Number, default: 100, },
+
+        ATK: { type: Number, default: 100, },
+        INT: { type: Number, default: 100, }, // magic attack
+        DEF: { type: Number, default: 100, }, // defense
+        ACC: { type: Number, default: 1, }, // Accuracy, độ chính xác => cường độ thần thức
+        AGI: { type: Number, default: 1, }, // Agility ~= Speed => thân pháp
+    }},
 
     equipments: {
         auxiliaries: [],

@@ -10,6 +10,11 @@ const Equipment = require('../models/Equipment')
 const Cluster = new Schema({
     name: String,
     front: String,
+    image: { type: String, default: '1A1s6d1GPoz9Yj7R63aS1ZoPDkYQvr6PC' },
+    location: { type: Object, default: {
+        top: '50%',
+        left: '50%',
+    }},
     immortalities: [{
         type: ObjectId,
         ref: 'Immortality',
