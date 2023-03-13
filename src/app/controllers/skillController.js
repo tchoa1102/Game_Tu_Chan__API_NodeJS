@@ -1,4 +1,4 @@
-const Skill = require('../models/Skill')
+const { Skill, } = require('../models')
 
 class SkillController {
     // [POST] /api/skills/create

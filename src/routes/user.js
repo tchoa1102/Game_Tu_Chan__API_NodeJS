@@ -1,8 +1,7 @@
 const express = require('express')
 const router = express.Router()
 
-const UserController = require('../app/controllers/UserController') 
-const ImmortalityController = require('../app/controllers/ImmortalityController')
+const { UserController, ImmortalityController, } = require('../app/controllers')
 
 // [GET]
 router.get('/whoami', UserController.get)

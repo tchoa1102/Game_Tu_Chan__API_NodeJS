@@ -1,12 +1,7 @@
 const mongoose = require('mongoose')
 const ObjectId = mongoose.Types.ObjectId
 
-const Quest = require('../models/Quest')
-const Immortality = require('../models/Immortality')
-const Setup = require('../models/Setup')
-const User = require('../models/User')
-
-
+const { Quest, Immortality, Setup, User, } = require('../models')
 
 class QuestController {
     // [GET] /api/quests
@@ -43,7 +38,7 @@ class QuestController {
             result.clusters.forEach(cluster => {
                 const largestImmortality = cluster.immortalities.reduce((largest, e) => {
                     // find largest level
-                    largest = {...this.findLargestLevel(levels, largest, e)}
+                    largest = {...findLargestLevel(levels, largest, e)}
 
                     return largest
                 }, new Object(cluster.immortalities[0]))
@@ -91,6 +86,7 @@ class QuestController {
             console.log(levels)
 
             const currentImmortality = immortalitiesUser[0]
+            // increase from level
             Object.keys(levels).forEach( nameLevel => {
                 Object.keys(levels[nameLevel]).forEach( step => {
                     if (isLargerOrEqual(levels, currentImmortality.level, nameLevel, step)) {

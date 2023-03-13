@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 
-const QuestController = require('../app/controllers/QuestController')
+const { QuestController, } = require('../app/controllers')
 
 // [GET] /api/quests/:idQuest/clusters/:idCluster/fight
 router.get('/:idQuest/clusters/:idCluster/fight', QuestController.fight)

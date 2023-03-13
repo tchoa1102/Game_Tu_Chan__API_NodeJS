@@ -1,4 +1,4 @@
-const User = require('../models/User')
+const { User, } = require('../models')
 
 class UserController {
     // [GET] /api/users/whoami

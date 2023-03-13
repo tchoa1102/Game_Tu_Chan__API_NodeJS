@@ -1,6 +1,5 @@
 const Immortality = require('../models/Immortality')
-const Avatar = require('../models/Avatar')
-const Skill = require('../models/Skill')
+const { Avatar, Skill, } = require('../models')
 
 class ImmortalityController {
     // [GET] /api/users/:id/immortalities

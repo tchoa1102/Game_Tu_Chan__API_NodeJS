@@ -2,7 +2,7 @@ const express = require('express')
 const router = express.Router()
 const passport = require('passport')
 
-const authController = require('../app/controllers/AuthController')
+const { authController, } = require('../app/controllers')
 
 // [GET]
 // login, send google server

@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const SkillController = require('../app/controllers/SkillController')
+const { SkillController, } = require('../app/controllers')
 
 router.patch('/update/:id', SkillController.update)
 router.post('/create', SkillController.create)
