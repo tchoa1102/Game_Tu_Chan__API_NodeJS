@@ -20,8 +20,8 @@ const Immortality = new Schema({
     } },
 
     status: { type: Object, default: {
-        hp: { type: Number, default: 100, },
-        mp: { type: Number, default: 100, },
+        HP: { type: Number, default: 100, },
+        MP: { type: Number, default: 100, },
 
         ATK: { type: Number, default: 100, },
         INT: { type: Number, default: 100, }, // magic attack
@@ -30,10 +30,10 @@ const Immortality = new Schema({
         AGI: { type: Number, default: 1, }, // Agility ~= Speed => thân pháp
     }},
 
-    equipments: {
-        auxiliaries: [],
-        attacks: [],
-    },
+    // equipments: {
+    //     auxiliaries: [],
+    //     attacks: [],
+    // },
 
     skills: { type: Object, }
     /**

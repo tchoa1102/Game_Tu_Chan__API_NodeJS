@@ -81,24 +81,50 @@ class QuestController {
             const idUser = '117658907214625686230111' || req.session.passport.user._id
 
             const { levels } = await Setup.findOne().lean()
-            const immortalitiesUser = await Immortality.find({user: idUser})
-            console.log(immortalitiesUser)
-            console.log(levels)
 
-            const currentImmortality = immortalitiesUser[0]
-            // increase from level
-            Object.keys(levels).forEach( nameLevel => {
-                Object.keys(levels[nameLevel]).forEach( step => {
-                    if (isLargerOrEqual(levels, currentImmortality.level, nameLevel, step)) {
-                        Object.keys(currentImmortality.status).forEach( property => {
-                            const eraseX = levels[nameLevel][step].increase.substr(1)
-                            const increase = Number.parseFloat(eraseX)
-                            currentImmortality.status[property] *= increase
-                        })
-                    }
-                })
+            // user
+            const user = await User.findById(idUser).populate({ path: 'bag.equipments.equip', })
+            const equipmentsOfUser = user.bag.equipments
+            const immortalitiesUser = await Immortality.find({user: idUser})
+            // console.log("user: ", user, "\nequip: ", equipmentsOfUser)
+            // console.log("Immortality: ", immortalitiesUser)
+            // console.log("levels: ", levels)
+
+            immortalitiesUser.forEach( currentImmortality => {
+                // increase from level
+                increaseStatusFromLevel(levels, currentImmortality)
+                // increase from equipment
+                increaseFromEquipment(equipmentsOfUser, immortalitiesUser)
+                // increase from skill
+
             })
 
+            // cluster
+            const quest = await Quest.findById(idQuest).populate({
+                path: 'clusters.immortalities'
+            })
+            const cluster = quest.clusters.find( cluster => {
+                return idCluster == cluster._id.toString()
+            })
+            const immortalitiesCluster = cluster.immortalities
+            
+            immortalitiesCluster.forEach( currentImmortality => {
+                // increase from level
+                increaseStatusFromLevel(levels, currentImmortality)
+                // increase from equipment
+                increaseFromEquipment(equipmentsOfUser, immortalitiesUser)
+                // increase from skill
+
+            })
+
+            // fight
+            const leftField = [[7,8,9],[4,5,6], [1,2,3]]
+            const rightField = [[1,2,3], [4,5,6], [7,8,9]]
+            // const queue = new queueMicrotask // ??
+
+            console.log('\n\nresult: ')
+            console.log('Immortality User: ', immortalitiesUser)
+            console.log('Immortality Cluster: ', immortalitiesCluster)
             return res.json({})
         } catch (error) {
             return next(error)
@@ -115,6 +141,31 @@ class QuestController {
             }
 
             return false
+        }
+
+        function increaseStatusFromLevel(levels, immortality) {
+            Object.keys(levels).forEach( nameLevel => {
+                Object.keys(levels[nameLevel]).forEach( step => {
+                    if (isLargerOrEqual(levels, immortality.level, nameLevel, step)) {
+                        Object.keys(immortality.status).forEach( property => {
+                            const eraseX = levels[nameLevel][step].increase.substr(1)
+                            const increase = Number.parseFloat(eraseX)
+                            immortality.status[property] *= increase
+                        })
+                    }
+                })
+            })
+        }
+
+        function increaseFromEquipment(equipments, immortalitiesUser) {
+            equipments.forEach( equip => {
+                immortalitiesUser.forEach( immortality => {
+                    if (immortality._id.toString() == equip.wearIs.toString()) {
+                        console.log(equip)
+                        immortality.status[equip.equip.property.type] += equip.equip.property.value
+                    }
+                })
+            })
         }
     }
 

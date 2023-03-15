@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const Schema = mongoose.Schema
 const ObjectId = mongoose.ObjectId
+const newObjectId = mongoose.Types.ObjectId
 
 // Schema register for model
 const Item = require('./Item')
@@ -29,16 +30,24 @@ const User = new Schema({
             quantity: Number,
             trainings: {}
         }],
-        equipments: [{
+        equipments: [{ // each a equipment is a element of array
             equip: {
                 type: ObjectId,
                 ref: 'Equipment',
             },
-            quantity: Number,
-            wears: {}
+            wearIs: {
+                type: ObjectId,
+                ref: 'Immortality',
+                default: newObjectId('000000000000000000000000'),
+            },
+            durability: { type: Number, required: true, default: 100, }, // <= 0 -> destroy
         }],
     },
-    quests: { type: Object, } // history excursion
+    quests: { type: Object, }, // history excursion
+    strategy: {
+        type: ObjectId,
+        ref: 'Setup.strategy',
+    },
 })
 
 module.exports = mongoose.model('User', User)
