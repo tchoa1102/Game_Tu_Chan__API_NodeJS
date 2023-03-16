@@ -89,45 +89,48 @@ class QuestController {
             // console.log("user: ", user, "\nequip: ", equipmentsOfUser)
             // console.log("Immortality: ", immortalitiesUser)
             // console.log("levels: ", levels)
-
-            immortalitiesUser.forEach( currentImmortality => {
-                // increase from level
-                increaseStatusFromLevel(levels, currentImmortality)
-                // increase from equipment
-                increaseFromEquipment(equipmentsOfUser, immortalitiesUser)
-                // increase from skill
-
-            })
-
-            // cluster
-            const quest = await Quest.findById(idQuest).populate({
-                path: 'clusters.immortalities'
-            })
-            const cluster = quest.clusters.find( cluster => {
-                return idCluster == cluster._id.toString()
-            })
-            const immortalitiesCluster = cluster.immortalities
+            // increase
+            increase(levels, immortalitiesUser, equipmentsOfUser)
             
-            immortalitiesCluster.forEach( currentImmortality => {
-                // increase from level
-                increaseStatusFromLevel(levels, currentImmortality)
-                // increase from equipment
-                increaseFromEquipment(equipmentsOfUser, immortalitiesUser)
-                // increase from skill
-
-            })
+            // cluster
+            const quest = await Quest.findById(idQuest).populate({ path: 'clusters.immortalities' })
+            const cluster = quest.clusters.find( cluster => idCluster == cluster._id.toString() )
+            const immortalitiesCluster = cluster.immortalities
+            // increase
+            increase(levels, immortalitiesCluster, equipmentsOfUser)
 
             // fight
-            const leftField = [[7,8,9],[4,5,6], [1,2,3]]
+            const maxRound = 31
+            // [col][row]
+            const leftField = [[7,8,9], [4,5,6], [1,2,3]]
             const rightField = [[1,2,3], [4,5,6], [7,8,9]]
+            const effects = []
+            let round = 0
+            const mountLeftField = {}
+            const mountRightField = {}
+            mountedField(mountLeftField, immortalitiesUser)
+            mountedField(mountRightField, immortalitiesCluster)
             // const queue = new queueMicrotask // ??
 
             console.log('\n\nresult: ')
+            console.log('mountLeftField: ', mountLeftField)
+            console.log('mountRightField: ', mountRightField)
             console.log('Immortality User: ', immortalitiesUser)
             console.log('Immortality Cluster: ', immortalitiesCluster)
             return res.json({})
         } catch (error) {
             return next(error)
+        }
+
+        function increase(levels, immortalities, equipments) {
+            immortalities.forEach( currentImmortality => {
+                // increase from level
+                increaseStatusFromLevel(levels, currentImmortality)
+                // increase from equipment
+                increaseFromEquipment(equipments, immortalities)
+                // increase from skill
+
+            })
         }
 
         function isLargerOrEqual(levels, target, nameLevel, step) {
@@ -165,6 +168,17 @@ class QuestController {
                         immortality.status[equip.equip.property.type] += equip.equip.property.value
                     }
                 })
+            })
+        }
+
+        function mountedField(field, immortalities) {
+            immortalities.forEach(immortality => {
+                field[immortality.index] = {
+                    currentStatus: immortality.currentlyStatus,
+                    status: immortality.status,
+                    skills: immortality.status,
+                    states: {}, // buff? debuff? (key: value)
+                }
             })
         }
     }

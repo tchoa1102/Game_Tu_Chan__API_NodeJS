@@ -6,12 +6,14 @@ const Property = require('./Property')
 
 const State = new Schema({
     who: { type: String, default: 'you', },
+    timeline: { type: Number, default: 100, }, // số lượt tồn tại, > 31 => oo => add base status
+
     name: { type: String, },
     effect: { type: String, },
     style: { type: String, },
     animation: { type: String, },
+
     property: { type: Property, default: () => ({}),},
-    timeline: { type: Number, }, // số lượt tồn tại
 })
 
 module.exports = State
