@@ -15,15 +15,18 @@ const Floor = new Schema({
     requirements: { type: Array, default: [], }, // required resources to train
     
     startIs: { type: String, required: true, },
-    typeOfActivity: { type: Array, default: ['single'], }, // row? col? ...
     typeOfChant: { type: String, default: 'chanting', },
     consume: { type: Array, default: [] }, // [{hp: }, {mp: }, ...]
+    activities: [{
+        typeOfTarget: { type: String, default: 'single', }, // row? col? ...
+        typeOfActivity: { type: String, default: 'first', }, // first / middle / last
+        property: { type: Property, default: () => ({}),}, // property for the skills
+    }],
 
     effects: { type: Effect, default: () => ({})},
 
     states: [State], // properties for the states when fight
 
-    property: { type: Property, default: () => ({}),}, // property for the skills
 })
 
 module.exports = Floor

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const ObjectId = mongoose.Types.ObjectId
 
-const { Quest, Immortality, Setup, User, } = require('../models')
+const { Quest, Immortality, Setup, User, Skill, Avatar } = require('../models')
 
 class QuestController {
     // [GET] /api/quests
@@ -86,6 +86,17 @@ class QuestController {
             const user = await User.findById(idUser).populate({ path: 'bag.equipments.equip', })
             const equipmentsOfUser = user.bag.equipments
             const immortalitiesUser = await Immortality.find({user: idUser})
+
+            for(let e of immortalitiesUser) {
+                const avatar = await Avatar.findOne({name: e.avatar})
+                e.effects = avatar.effects
+
+                for(let key in e.skills) {
+                    const skill = await Skill.findOne({name: key})
+                    e.skills[key].description = skill.description
+                    e.skills[key].floor = skill.floors.find((floor) => floor.name == e.skills[key].floor)
+                }
+            }
             // console.log("user: ", user, "\nequip: ", equipmentsOfUser)
             // console.log("Immortality: ", immortalitiesUser)
             // console.log("levels: ", levels)
@@ -96,27 +107,90 @@ class QuestController {
             const quest = await Quest.findById(idQuest).populate({ path: 'clusters.immortalities' })
             const cluster = quest.clusters.find( cluster => idCluster == cluster._id.toString() )
             const immortalitiesCluster = cluster.immortalities
+
+            for(let e of immortalitiesCluster) {
+                const avatar = await Avatar.findOne({name: e.avatar})
+                e.effects = avatar.effects
+
+                for(let key in e.skills) {
+                    const skill = await Skill.findOne({name: key})
+                    e.skills[key].description = skill.description
+                    e.skills[key].floor = skill.floors.find((floor) => floor.name == e.skills[key].floor)
+                }
+            }
             // increase
             increase(levels, immortalitiesCluster, equipmentsOfUser)
 
             // fight
             const maxRound = 31
             // [col][row]
-            const leftField = [[7,8,9], [4,5,6], [1,2,3]]
+            const leftField = [[1,2,3], [4,5,6], [7,8,9]] // ([[7,8,9], [4,5,6], [1,2,3]]) -> when screen
             const rightField = [[1,2,3], [4,5,6], [7,8,9]]
-            const effects = []
-            let round = 0
+            const plot = []
             const mountLeftField = {}
             const mountRightField = {}
             mountedField(mountLeftField, immortalitiesUser)
             mountedField(mountRightField, immortalitiesCluster)
             // const queue = new queueMicrotask // ??
 
-            console.log('\n\nresult: ')
-            console.log('mountLeftField: ', mountLeftField)
-            console.log('mountRightField: ', mountRightField)
-            console.log('Immortality User: ', immortalitiesUser)
-            console.log('Immortality Cluster: ', immortalitiesCluster)
+            // field[immortality.index].actor == !actorFlag => will be actor
+            let actorFlag = true
+            for(let round = 0; round < 6; round ++) {
+                const roundHistory = {
+                    you: {},
+                    defense: {},
+                }
+                const findActorResult = findActor(leftField, mountLeftField, undefined, actorFlag)
+                const actor = findActorResult.actor
+                actorFlag = findActorResult.actorFlag
+
+                if (actor != undefined) {
+                    // pointer to mountLeftField[actor].states
+                    const states = mountLeftField[actor].states
+                    Object.keys(states).forEach(key => {})
+
+                    // pointer to mountLeftField[actor].skills['Hỏa Cầu'].floor.activities
+                    const activities = mountLeftField[actor].skills['Hỏa Cầu'].floor.activities
+                    activities.forEach(activity => {
+                        let x = -1
+                        let y = -1
+                        switch(activity.typeOfTarget) {
+                            case 'all':
+                                break
+                            default:
+                                let indexTarget
+                                switch(activity.typeOfActivity) {
+                                    case 'first':
+                                        break
+                                    case 'middle':
+                                        break
+                                    case 'last':
+                                        break
+                                }
+
+                                switch(activity.typeOfTarget) {
+                                    case 'single':
+                                        x = y = 0
+                                        break
+                                    case 'row':
+                                        x = 0
+                                        y = 1
+                                        break
+                                    case 'col':
+                                        x = 1
+                                        y = 0
+                                        break
+                                }
+                        }
+                    })
+                }
+            }
+
+            // console.log('\n\n\nresult: ')
+            // console.log('mountLeftField: ', mountLeftField)
+            // console.log('mountRightField: ', mountRightField)
+            // console.log('Immortality User: ', immortalitiesUser)
+            // console.log('Immortality Cluster: ', immortalitiesCluster)
             return res.json({})
         } catch (error) {
             return next(error)
@@ -131,55 +205,84 @@ class QuestController {
                 // increase from skill
 
             })
-        }
 
-        function isLargerOrEqual(levels, target, nameLevel, step) {
-            if (levels[target.name].index > levels[nameLevel].index) {
-                return true
-            } else if (
-                levels[target.name].index == levels[nameLevel].index &&
-                levels[target.name][target.level].index >= levels[nameLevel][step].index 
-            ) {
-                return true
+            function isLargerOrEqual(levels, target, nameLevel, step) {
+                if (levels[target.name].index > levels[nameLevel].index) {
+                    return true
+                } else if (
+                    levels[target.name].index == levels[nameLevel].index &&
+                    levels[target.name][target.level].index >= levels[nameLevel][step].index 
+                ) {
+                    return true
+                }
+    
+                return false
             }
-
-            return false
-        }
-
-        function increaseStatusFromLevel(levels, immortality) {
-            Object.keys(levels).forEach( nameLevel => {
-                Object.keys(levels[nameLevel]).forEach( step => {
-                    if (isLargerOrEqual(levels, immortality.level, nameLevel, step)) {
-                        Object.keys(immortality.status).forEach( property => {
-                            const eraseX = levels[nameLevel][step].increase.substr(1)
-                            const increase = Number.parseFloat(eraseX)
-                            immortality.status[property] *= increase
-                        })
-                    }
+    
+            function increaseStatusFromLevel(levels, immortality) {
+                Object.keys(levels).forEach( nameLevel => {
+                    Object.keys(levels[nameLevel]).forEach( step => {
+                        if (isLargerOrEqual(levels, immortality.level, nameLevel, step)) {
+                            Object.keys(immortality.status).forEach( property => {
+                                const eraseX = levels[nameLevel][step].increase.substr(1)
+                                const increase = Number.parseFloat(eraseX)
+                                immortality.status[property] *= increase
+                            })
+                        }
+                    })
                 })
-            })
-        }
-
-        function increaseFromEquipment(equipments, immortalitiesUser) {
-            equipments.forEach( equip => {
-                immortalitiesUser.forEach( immortality => {
-                    if (immortality._id.toString() == equip.wearIs.toString()) {
-                        console.log(equip)
-                        immortality.status[equip.equip.property.type] += equip.equip.property.value
-                    }
+            }
+    
+            function increaseFromEquipment(equipments, immortalitiesUser) {
+                equipments.forEach( equip => {
+                    immortalitiesUser.forEach( immortality => {
+                        if (immortality._id.toString() == equip.wearIs.toString()) {
+                            // console.log(equip)
+                            immortality.status[equip.equip.property.type] += equip.equip.property.value
+                        }
+                    })
                 })
-            })
+            }
         }
 
         function mountedField(field, immortalities) {
             immortalities.forEach(immortality => {
                 field[immortality.index] = {
+                    actor: false,
                     currentStatus: immortality.currentlyStatus,
                     status: immortality.status,
-                    skills: immortality.status,
-                    states: {}, // buff? debuff? (key: value)
+                    skills: immortality.skills,
+                    states: {}, // (key: value)
+                    /**
+                     * key: {
+                     *  name: ,
+                     *  type: ,
+                     *  indicator: ,
+                     *  timeline: , // each round will be subtract, == 0 => delete
+                     * }
+                     */
                 }
             })
+        }
+
+        function findActor(field, mountField, actor, actorFlag) {
+            field.forEach(col => col.some( numData => {
+                // if it not attack then attack
+                if (mountField[numData] && mountField[numData]?.actor != actorFlag) {
+                    // console.log(numData)
+                    actor = numData
+                    mountField[numData].actor = actorFlag
+                    return true
+                }
+            }))
+
+            // last element still not is selected
+            if (!actor && Object.keys(mountField).length > 0) {
+                // reverse actorFlag so that can't change mountField[numData].actor
+                return findActor(field, mountField, actor, !actorFlag)
+            }
+
+            return { actor, actorFlag }
         }
     }
 
