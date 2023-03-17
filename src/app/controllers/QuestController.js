@@ -80,13 +80,14 @@ class QuestController {
         try {
             const idUser = '117658907214625686230111' || req.session.passport.user._id
 
-            const { levels } = await Setup.findOne().lean()
+            const { levels, typeOfActivity, typeOfTarget } = await Setup.findOne().lean()
+            // console.log(levels, typeOfActivity, typeOfTarget)
 
             // user
             const user = await User.findById(idUser).populate({ path: 'bag.equipments.equip', })
             const equipmentsOfUser = user.bag.equipments
             const immortalitiesUser = await Immortality.find({user: idUser})
-
+            // mounted skills
             for(let e of immortalitiesUser) {
                 const avatar = await Avatar.findOne({name: e.avatar})
                 e.effects = avatar.effects
@@ -97,9 +98,6 @@ class QuestController {
                     e.skills[key].floor = skill.floors.find((floor) => floor.name == e.skills[key].floor)
                 }
             }
-            // console.log("user: ", user, "\nequip: ", equipmentsOfUser)
-            // console.log("Immortality: ", immortalitiesUser)
-            // console.log("levels: ", levels)
             // increase
             increase(levels, immortalitiesUser, equipmentsOfUser)
             
@@ -107,7 +105,7 @@ class QuestController {
             const quest = await Quest.findById(idQuest).populate({ path: 'clusters.immortalities' })
             const cluster = quest.clusters.find( cluster => idCluster == cluster._id.toString() )
             const immortalitiesCluster = cluster.immortalities
-
+            // mounted skills
             for(let e of immortalitiesCluster) {
                 const avatar = await Avatar.findOne({name: e.avatar})
                 e.effects = avatar.effects
@@ -131,6 +129,13 @@ class QuestController {
             const mountRightField = {}
             mountedField(mountLeftField, immortalitiesUser)
             mountedField(mountRightField, immortalitiesCluster)
+
+            // pointer to mountLeftField and mountRightField
+            const immortalitiesLeft = Object.keys(mountLeftField).map(key => mountLeftField[key])
+            const immortalitiesRight = [...immortalitiesCluster]
+            immortalitiesLeft.sort((a, b) => a.index - b.index)
+            immortalitiesRight.sort((a, b) => a.index - b.index)
+
             // const queue = new queueMicrotask // ??
 
             // field[immortality.index].actor == !actorFlag => will be actor
@@ -140,7 +145,7 @@ class QuestController {
                     you: {},
                     defense: {},
                 }
-                const findActorResult = findActor(leftField, mountLeftField, undefined, actorFlag)
+                const findActorResult = findActor(immortalitiesLeft, undefined, actorFlag)
                 const actor = findActorResult.actor
                 actorFlag = findActorResult.actorFlag
 
@@ -159,28 +164,7 @@ class QuestController {
                                 break
                             default:
                                 let indexTarget
-                                switch(activity.typeOfActivity) {
-                                    case 'first':
-                                        break
-                                    case 'middle':
-                                        break
-                                    case 'last':
-                                        break
-                                }
-
-                                switch(activity.typeOfTarget) {
-                                    case 'single':
-                                        x = y = 0
-                                        break
-                                    case 'row':
-                                        x = 0
-                                        y = 1
-                                        break
-                                    case 'col':
-                                        x = 1
-                                        y = 0
-                                        break
-                                }
+                                findTarget(2, typeOfActivity[activity.typeOfActivity], leftField, mountLeftField)
                         }
                     })
                 }
@@ -249,9 +233,10 @@ class QuestController {
             immortalities.forEach(immortality => {
                 field[immortality.index] = {
                     actor: false,
-                    currentStatus: immortality.currentlyStatus,
-                    status: immortality.status,
-                    skills: immortality.skills,
+                    index: immortality.index,
+                    currentStatus: {...immortality.currentlyStatus},
+                    status: {...immortality.status},
+                    skills: {...immortality.skills},
                     states: {}, // (key: value)
                     /**
                      * key: {
@@ -265,24 +250,61 @@ class QuestController {
             })
         }
 
-        function findActor(field, mountField, actor, actorFlag) {
-            field.forEach(col => col.some( numData => {
+        function findActor(immortalities, actor, actorFlag) {
+            immortalities.some( immortality => {
                 // if it not attack then attack
-                if (mountField[numData] && mountField[numData]?.actor != actorFlag) {
-                    // console.log(numData)
-                    actor = numData
-                    mountField[numData].actor = actorFlag
+                if (immortality?.actor != actorFlag) {
+                    // console.log(immortality)
+                    actor = immortality.index
+                    immortality.actor = actorFlag
                     return true
                 }
-            }))
+            })
 
             // last element still not is selected
-            if (!actor && Object.keys(mountField).length > 0) {
+            if (!actor && immortalities.length > 0) {
                 // reverse actorFlag so that can't change mountField[numData].actor
-                return findActor(field, mountField, actor, !actorFlag)
+                return findActor(immortalities, actor, !actorFlag)
             }
 
             return { actor, actorFlag }
+        }
+
+        function findTarget(rowOfActor, typeOfActivity, field, mountFieldTarget) {
+            for(let row = rowOfActor; row >= 0; row --) {
+                for(let col = typeOfActivity.col; stopCondition(typeOfActivity, col); col = computedColumn(typeOfActivity, col)) {
+                    if (mountFieldTarget[col]) {
+                        console.log(col)
+                        return col
+                    }
+                }
+            }
+
+            for(let row = rowOfActor; row < field[0].length; row ++) {
+                for(let col = typeOfActivity.col; stopCondition(typeOfActivity, col); col = computedColumn(typeOfActivity, col)) {
+                    if (mountFieldTarget[col]) {
+                        console.log(col)
+                        return col
+                    }
+                }
+            }
+
+            return -1
+
+            function computedColumn(typeOfActivity, col) {
+                if (typeOfActivity.col == 0) {
+                    col ++
+                } else if (typeOfActivity.col == 2) {
+                    col --
+                }
+
+                return col
+            }
+
+            function stopCondition(typeOfActivity, col) {
+                return (typeOfActivity.col == 0 && col < field.length) 
+                        || (typeOfActivity.col == 2 && col >= 0)
+            }
         }
     }
 
