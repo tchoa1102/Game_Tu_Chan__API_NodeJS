@@ -80,7 +80,7 @@ class QuestController {
         try {
             const idUser = '117658907214625686230111' || req.session.passport.user._id
 
-            const { levels, typeOfActivity, typeOfTarget } = await Setup.findOne().lean()
+            const { whos, levels, typeOfActivity, typeOfTarget } = await Setup.findOne().lean()
             // console.log(levels, typeOfActivity, typeOfTarget)
 
             // user
@@ -139,35 +139,21 @@ class QuestController {
             // const queue = new queueMicrotask // ??
 
             // field[immortality.index].actor == !actorFlag => will be actor
-            let actorFlag = true
+            let actorFlagYou = true
+            let actorFlagDefense = true
             for(let round = 0; round < 6; round ++) {
+                const you = 1
+                const defense = -1
                 const roundHistory = {
                     you: {},
                     defense: {},
                 }
-                const findActorResult = findActor(immortalitiesLeft, undefined, actorFlag)
-                const actor = findActorResult.actor
-                actorFlag = findActorResult.actorFlag
-
-                if (actor != undefined) {
-                    // pointer to mountLeftField[actor].states
-                    const states = mountLeftField[actor].states
-                    Object.keys(states).forEach(key => {})
-
-                    // pointer to mountLeftField[actor].skills['Hỏa Cầu'].floor.activities
-                    const activities = mountLeftField[actor].skills['Hỏa Cầu'].floor.activities
-                    activities.forEach(activity => {
-                        let x = -1
-                        let y = -1
-                        switch(activity.typeOfTarget) {
-                            case 'all':
-                                break
-                            default:
-                                let indexTarget
-                                findTarget(2, typeOfActivity[activity.typeOfActivity], leftField, mountLeftField)
-                        }
-                    })
-                }
+                
+                const resultYou = createPlot(whos, round, you, leftField, plot, roundHistory, mountLeftField, immortalitiesLeft, actorFlagYou, mountRightField, immortalitiesRight, typeOfActivity, typeOfTarget)
+                actorFlagYou = resultYou.actorFlag
+                
+                const resultDefense = createPlot(whos, round, defense, rightField, plot, roundHistory, mountRightField, immortalitiesRight, actorFlagDefense, mountLeftField, immortalitiesLeft, typeOfActivity, typeOfTarget)
+                actorFlagDefense = resultDefense.actorFlag
             }
 
             // console.log('\n\n\nresult: ')
@@ -175,6 +161,8 @@ class QuestController {
             // console.log('mountRightField: ', mountRightField)
             // console.log('Immortality User: ', immortalitiesUser)
             // console.log('Immortality Cluster: ', immortalitiesCluster)
+            console.log(plot)
+            plot.forEach((round, index) => console.log(index, round.you.effects, round.defense.effects, '\n'))
             return res.json({})
         } catch (error) {
             return next(error)
@@ -250,6 +238,106 @@ class QuestController {
             })
         }
 
+        function createPlot(whos, round, who, field, plot, roundHistory, mainImmortalitiesObject, mainImmortalitiesArray, actorFlag, targetImmortalitiesObject, targetImmortalitiesArray, typeOfActivity, typeOfTarget) {
+            const whoAmI = (who > 0 ? 'you' : 'defense')
+            const findActorResult = findActor(mainImmortalitiesArray, undefined, actorFlag)
+            const actor = findActorResult.actor
+            actorFlag = findActorResult.actorFlag
+            // find row of actor
+            const rowOfActor = findRowOfActor(actor, field)
+
+            roundHistory[whoAmI].actor = actor
+            roundHistory[whoAmI].effects = []
+
+            if (actor != undefined && rowOfActor != -1) {
+
+                // pointer to mainImmortalitiesObject[actor].states
+                const states = mainImmortalitiesObject[actor].states
+                Object.keys(states).forEach(key => {})
+
+                // Skill keys
+                const skillKeys = Object.keys(mainImmortalitiesObject[actor].skills)
+                // random select skill
+                const skillIndex = Math.floor(Math.random() * Object.keys(mainImmortalitiesObject[actor].skills).length)
+                // console.log(skillIndex)
+                const skillKey = skillKeys[skillIndex]
+                // pointer to mainImmortalitiesObject[actor].skills['Hỏa Cầu'].floor.activities
+                const activities = mainImmortalitiesObject[actor].skills[skillKey].floor.activities
+                activities.forEach(activity => {
+                    const typeEffect = (activity.property.value < 0) ? 'damages' : 'heals'
+                    const targetOfActivity = (activity.property.value < 0) ? targetImmortalitiesObject : mainImmortalitiesObject
+                    // console.log(targetOfActivity)
+                    const effect = {
+                        type: 'skill',
+                        name: skillKey,
+                        objects: [],
+                        [typeEffect]: []
+                    }
+                    switch(activity.typeOfTarget) {
+                        case 'all':
+                            targetImmortalitiesArray.forEach(immortality => {
+                                effect.objects.push(immortality.index * who * whos[whoAmI])
+                                effect[typeEffect].push(activity.property.value)
+                            })
+                            break
+                        default:
+                            const locationOfTarget = findTarget(rowOfActor, typeOfActivity[activity.typeOfActivity],
+                                                field, mainImmortalitiesObject)
+                            if (locationOfTarget.col != -1) {
+                                const vectorArguments = typeOfTarget[activity.typeOfTarget]
+                                
+                                if (vectorArguments.x > 0) {
+                                    locationOfTarget.col = field.length - 1
+                                    for(locationOfTarget.col; locationOfTarget.col > 0; locationOfTarget.col --) {
+                                        // console.log(`Attack ${locationOfTarget.row} ${locationOfTarget.col}`)
+
+                                        const index = field[locationOfTarget.col][locationOfTarget.row]
+                                        const target = targetOfActivity[ index ]
+                                        // console.log('x', index * who * whos[activity.who], round, index, target)
+                                        // console.log(index, who, whos[activity.who])
+                                        if (target) {
+                                            effect.objects.push(index * who * whos[activity.who])
+                                            effect[typeEffect].push(activity.property.value)
+                                        }
+                                    }
+                                }
+                                if (vectorArguments.y > 0) {
+                                    locationOfTarget.row = field[0].length - 1
+                                    for(locationOfTarget.row; locationOfTarget.row > 0; locationOfTarget.row --) {
+                                        // console.log(`Attack ${locationOfTarget.row} ${locationOfTarget.col}`)
+
+                                        const index = field[locationOfTarget.col][locationOfTarget.row]
+                                        const target = targetOfActivity[ index ]
+                                        // console.log('y', index * who * whos[activity.who], round, index, target)
+                                        // console.log(index, who, whos[activity.who])
+                                        if (target) {
+                                            effect.objects.push(index * who * whos[activity.who])
+                                            effect[typeEffect].push(activity.property.value)
+                                        }
+                                    }
+                                }
+                                // console.log(`Attack ${locationOfTarget.row} ${locationOfTarget.col}`)
+                                const index = field[locationOfTarget.col][locationOfTarget.row]
+                                const target = targetOfActivity[ index ]
+                                // console.log(' ', index * who * whos[activity.who], round, index, target)
+                                // console.log(index, who, whos[activity.who])
+                                if (target) {
+                                    effect.objects.push(index * who * whos[activity.who])
+                                    effect[typeEffect].push(activity.property.value)
+                                }
+                            }
+                            break
+                    }
+
+                    roundHistory[whoAmI].effects.push(effect)
+                })
+
+                plot.push(roundHistory)
+            }
+
+            return { plot, roundHistory, mainImmortalitiesObject, mainImmortalitiesArray, actorFlag }
+        }
+
         function findActor(immortalities, actor, actorFlag) {
             immortalities.some( immortality => {
                 // if it not attack then attack
@@ -270,26 +358,35 @@ class QuestController {
             return { actor, actorFlag }
         }
 
+        function findRowOfActor(actor, field) {
+            let rowOfActor = -1
+            field.forEach(col => {
+                for(let row = 0; row < col.length; row ++) {
+                    if (col[row] == actor) rowOfActor = row
+                }
+            })
+
+            return rowOfActor
+        }
+
         function findTarget(rowOfActor, typeOfActivity, field, mountFieldTarget) {
             for(let row = rowOfActor; row >= 0; row --) {
                 for(let col = typeOfActivity.col; stopCondition(typeOfActivity, col); col = computedColumn(typeOfActivity, col)) {
-                    if (mountFieldTarget[col]) {
-                        console.log(col)
-                        return col
+                    if (mountFieldTarget[field[col][row]]) {
+                        return { col, row }
                     }
                 }
             }
 
             for(let row = rowOfActor; row < field[0].length; row ++) {
                 for(let col = typeOfActivity.col; stopCondition(typeOfActivity, col); col = computedColumn(typeOfActivity, col)) {
-                    if (mountFieldTarget[col]) {
-                        console.log(col)
-                        return col
+                    if (mountFieldTarget[field[col][row]]) {
+                        return { col, row }
                     }
                 }
             }
 
-            return -1
+            return { col: -1, row: -1 }
 
             function computedColumn(typeOfActivity, col) {
                 if (typeOfActivity.col == 0) {
