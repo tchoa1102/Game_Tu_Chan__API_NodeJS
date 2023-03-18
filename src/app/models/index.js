@@ -9,6 +9,7 @@ const Quest = require('./Quest')
 const Setup = require('./Setup')
 const Skill = require('./Skill')
 const User = require('./User')
+const Effect = require('./Effect')
 
 module.exports = {
     Avatar,
@@ -22,4 +23,5 @@ module.exports = {
     Setup,
     Skill,
     User,
+    Effect,
 }

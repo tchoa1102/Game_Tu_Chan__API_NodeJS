@@ -9,9 +9,7 @@ const State = new Schema({
     timeline: { type: Number, default: 100, }, // số lượt tồn tại, > 31 => oo => add base status
 
     name: { type: String, },
-    effect: { type: String, },
-    style: { type: String, },
-    animation: { type: String, },
+    effect: { type: ObjectId, },
 
     property: { type: Property, default: () => ({}),},
 })
