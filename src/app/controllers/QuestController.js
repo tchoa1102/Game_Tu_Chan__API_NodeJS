@@ -93,7 +93,10 @@ class QuestController {
                 e.effects = avatar.effects
 
                 for(let key in e.skills) {
-                    const skill = await Skill.findOne({name: key})
+                    const skill = await Skill.findOne({name: key}).populate({ path: 'floors.activities.effect' })
+                    const skill2 = await Skill.findOne({name: key}).populate({ path: 'floors.activities.statesBonus.effect' })
+                    console.log(skill.floors[0].activities[0].effect)
+                    console.log(skill2.floors[0].activities[0].statesBonus[0].effect)
                     e.skills[key].description = skill.description
                     e.skills[key].floor = skill.floors.find((floor) => floor.name == e.skills[key].floor)
                 }
@@ -149,11 +152,11 @@ class QuestController {
                     defense: {},
                 }
 
-                const resultYou = createPlot(whos, round, you, leftField, plot, roundHistory, mountLeftField, immortalitiesLeft, actorFlagYou, mountRightField, immortalitiesRight, typeOfActivity, typeOfTarget)
+                const resultYou = createPlot(round, whos, you, leftField, plot, roundHistory, mountLeftField, immortalitiesLeft, actorFlagYou, mountRightField, immortalitiesRight, typeOfActivity, typeOfTarget)
                 actorFlagYou = resultYou.actorFlag
                 
-                // const resultDefense = createPlot(whos, round, defense, rightField, plot, roundHistory, mountRightField, immortalitiesRight, actorFlagDefense, mountLeftField, immortalitiesLeft, typeOfActivity, typeOfTarget)
-                // actorFlagDefense = resultDefense.actorFlag
+                const resultDefense = createPlot(round, whos, defense, rightField, plot, roundHistory, mountRightField, immortalitiesRight, actorFlagDefense, mountLeftField, immortalitiesLeft, typeOfActivity, typeOfTarget)
+                actorFlagDefense = resultDefense.actorFlag
             }
 
             // console.log('\n\n\nresult: ')
@@ -238,8 +241,9 @@ class QuestController {
             })
         }
 
-        function createPlot(whos, round, who, field, plot, roundHistory, mainImmortalitiesObject, mainImmortalitiesArray, actorFlag, targetImmortalitiesObject, targetImmortalitiesArray, typeOfActivity, typeOfTarget) {
+        function createPlot(round, whos, who, field, plot, roundHistory, mainImmortalitiesObject, mainImmortalitiesArray, actorFlag, enemyImmortalitiesObject, enemyImmortalitiesArray, typeOfActivity, typeOfTarget) {
             const whoAmI = (who > 0 ? 'you' : 'defense')
+            const skillsList = []
             const findActorResult = findActor(mainImmortalitiesArray, undefined, actorFlag)
             const actor = findActorResult.actor
             actorFlag = findActorResult.actorFlag
@@ -250,7 +254,6 @@ class QuestController {
             roundHistory[whoAmI].effects = []
 
             if (actor != undefined && rowOfActor != -1) {
-
                 // pointer to mainImmortalitiesObject[actor].states
                 const states = mainImmortalitiesObject[actor].states
                 Object.keys(states).forEach(key => {})
@@ -261,45 +264,45 @@ class QuestController {
                 const skillIndex = Math.floor(Math.random() * Object.keys(mainImmortalitiesObject[actor].skills).length)
                 // console.log(skillIndex)
                 const skillKey = skillKeys[skillIndex]
+                skillsList.push(skillKey)
                 // pointer to mainImmortalitiesObject[actor].skills['Hỏa Cầu'].floor.activities
                 const activities = mainImmortalitiesObject[actor].skills[skillKey].floor.activities
                 activities.forEach(activity => {
                     const typeEffect = (activity.property.value < 0) ? 'damages' : 'heals'
-                    const targetOfActivity = (activity.property.value < 0) ? targetImmortalitiesObject : mainImmortalitiesObject
-                    const targetOfActivityArray = (activity.property.value < 0) ? targetImmortalitiesArray : mainImmortalitiesArray
-                    // console.log(targetOfActivity)
+                    const targetOfActivitiesObject = (whos[activity.who] < 0) ? enemyImmortalitiesObject : mainImmortalitiesObject
+                    const targetOfActivitiesArray = (whos[activity.who] < 0) ? enemyImmortalitiesArray : mainImmortalitiesArray
+                    const otherOfActivitiesObject = (whos[activity.who] >= 0) ? enemyImmortalitiesObject : mainImmortalitiesObject
+                    const otherOfActivitiesArray = (whos[activity.who] >= 0) ? enemyImmortalitiesArray : mainImmortalitiesArray
+                    // console.log(targetOfActivitiesObject)
+                    // console.log(activity.statesBonus)
                     const effect = {
                         type: 'skill',
                         name: skillKey,
                         objects: [],
                         [typeEffect]: []
                     }
-                    
-                    // console.log(activity.typeOfActivity)
+
                     switch (activity.typeOfActivity) {
-                        case 'first':
-                        case 'last':
+                        case 'first': //enemy <=> whos[activity.who] < 0
+                        case 'last': //enemy <=> whos[activity.who] < 0
                             switch(activity.typeOfTarget) {
                                 case 'all':
-                                    targetOfActivityArray.forEach(immortality => {
-                                        immortality.currentStatus.currentlyHP -= (-activity.property.value)
-                                        effect.objects.push(immortality.index * who * whos[whoAmI])
-                                        effect[typeEffect].push(activity.property.value)
-
-                                        if (immortality.currentStatus.currentlyHP <= 0) {
-                                            delete targetOfActivity[immortality.index]
+                                    targetOfActivitiesArray.forEach(immortality => {
+                                        handleComputedDamage(whos, who, immortality, targetOfActivitiesObject, effect, typeEffect, activity)
+                                        if (immortality) {
+                                            activity.statesBonus.forEach(state => {
+                                                if (whos[state.who] < 0) { // side immortality's enemy
+                                                    // immortality?.states[]
+                                                }
+                                            })
                                         }
                                     })
                                     // erase element have hp <= 0
-                                    const newImmortalities = Object.keys(targetOfActivity).map(key => targetOfActivity[key])
-                                    newImmortalities.forEach((immortality, index) => targetOfActivityArray[index] = immortality)
-                                    while(newImmortalities.length != targetOfActivityArray.length) {
-                                        targetOfActivityArray.pop()
-                                    }
+                                    handleDeleteElementOfArray(targetOfActivitiesObject, targetOfActivitiesArray)
                                     break
-                                default:
+                                default: // col, row, single
                                     const locationOfTarget = findTarget(rowOfActor, typeOfActivity[activity.typeOfActivity],
-                                                        field, mainImmortalitiesObject)
+                                                        field, targetOfActivitiesObject)
                                     if (locationOfTarget.col != -1) {
                                         const vectorArguments = typeOfTarget[activity.typeOfTarget]
                                         
@@ -307,94 +310,85 @@ class QuestController {
                                             locationOfTarget.col = field.length - 1
                                             for(locationOfTarget.col; locationOfTarget.col > 0; locationOfTarget.col --) {
                                                 // console.log(`Attack ${locationOfTarget.row} ${locationOfTarget.col}`)
-        
                                                 const index = field[locationOfTarget.col][locationOfTarget.row]
-                                                const target = targetOfActivity[ index ]
-                                                target.currentStatus.currentlyHP -= (-activity.property.value)
-
-                                                // console.log('x', index * who * whos[activity.who], round, index, target)
-                                                // console.log(index, who, whos[activity.who])
-                                                if (target) {
-                                                    effect.objects.push(index * who * whos[activity.who])
-                                                    effect[typeEffect].push(activity.property.value)
-                                                }
-
-                                                if (target.currentStatus.currentlyHP <= 0) {
-                                                    delete targetImmortalitiesObject[target.index]
+                                                const targetImmortality = targetOfActivitiesObject[ index ]
+                                                handleComputedDamage(whos, who, targetImmortality, targetOfActivitiesObject, effect, typeEffect, activity)
+                                                
+                                                if (targetImmortality) {
+                                                    activity.statesBonus.forEach(state => {
+                                                        if (whos[state.who] < 0) { // side immortality's enemy
+                                                            targetImmortality?.states.push(state)
+                                                        }
+                                                    })
                                                 }
                                             }
-
                                             // erase element have hp <= 0
-                                            const newImmortalities = Object.keys(targetOfActivity).map(key => targetOfActivity[key])
-                                            newImmortalities.forEach((immortality, index) => targetOfActivityArray[index] = immortality)
-                                            while(newImmortalities.length != targetOfActivityArray.length) {
-                                                targetOfActivityArray.pop()
-                                            }
+                                            handleDeleteElementOfArray(targetOfActivitiesObject, targetOfActivitiesObject)
                                         }
                                         if (vectorArguments.y > 0) {
                                             locationOfTarget.row = field[0].length - 1
                                             for(locationOfTarget.row; locationOfTarget.row > 0; locationOfTarget.row --) {
-                                                // console.log(`Attack ${locationOfTarget.row} ${locationOfTarget.col}`)
-        
                                                 const index = field[locationOfTarget.col][locationOfTarget.row]
-                                                const target = targetOfActivity[ index ]
-                                                target.currentStatus.currentlyHP -= (-activity.property.value)
-
-                                                // console.log('y', index * who * whos[activity.who], round, index, target)
-                                                // console.log(index, who, whos[activity.who])
-                                                if (target) {
-                                                    effect.objects.push(index * who * whos[activity.who])
-                                                    effect[typeEffect].push(activity.property.value)
-                                                }
-
-                                                if (target.currentStatus.currentlyHP <= 0) {
-                                                    delete targetImmortalitiesObject[immortality.index]
+                                                const targetImmortality = targetOfActivitiesObject[ index ]
+                                                handleComputedDamage(whos, who, targetImmortality, targetOfActivitiesObject, effect, typeEffect, activity)
+                                                
+                                                if (targetImmortality) {
+                                                    activity.statesBonus.forEach(state => {
+                                                        if (whos[state.who] < 0) { // side immortality's enemy
+                                                            targetImmortality?.states.push(state)
+                                                        }
+                                                    })
                                                 }
                                             }
-                                            
                                             // erase element have hp <= 0
-                                            const newImmortalities = Object.keys(targetOfActivity).map(key => targetOfActivity[key])
-                                            newImmortalities.forEach((immortality, index) => targetOfActivityArray[index] = immortality)
-                                            while(newImmortalities.length != targetOfActivityArray.length) {
-                                                targetOfActivityArray.pop()
-                                            }
+                                            handleDeleteElementOfArray(targetOfActivitiesObject, targetOfActivitiesArray)
                                         }
-                                        // console.log(`Attack ${locationOfTarget.row} ${locationOfTarget.col}`)
+
+                                        // Case element be effected first
                                         const index = field[locationOfTarget.col][locationOfTarget.row]
-                                        const target = targetOfActivity[ index ]
-                                        target.currentStatus.currentlyHP -= (-activity.property.value)
-
-                                        // console.log(' ', index * who * whos[activity.who], round, index, target)
-                                        // console.log(index, who, whos[activity.who])
-                                        if (target) {
-                                            effect.objects.push(index * who * whos[activity.who])
-                                            effect[typeEffect].push(activity.property.value)
+                                        const targetImmortality = targetOfActivitiesObject[index]
+                                        handleComputedDamage(whos, who, targetImmortality, targetOfActivitiesObject, effect, typeEffect, activity)
+                                        
+                                        if (targetImmortality) {
+                                            activity.statesBonus.forEach(state => {
+                                                if (whos[state.who] < 0) { // side immortality's enemy
+                                                    targetImmortality?.states.push(state)
+                                                }
+                                            })
                                         }
-
-                                        if (target.currentStatus.currentlyHP <= 0) {
-                                            delete targetImmortalitiesObject[immortality.index]
-                                        }
+                                        // console.log(targetImmortality)
                                         // erase element have hp <= 0
-                                        const newImmortalities = Object.keys(targetOfActivity).map(key => targetOfActivity[key])
-                                        newImmortalities.forEach((immortality, index) => targetOfActivityArray[index] = immortality)
-                                        while(newImmortalities.length != targetOfActivityArray.length) {
-                                            targetOfActivityArray.pop()
-                                        }
+                                        handleDeleteElementOfArray(targetOfActivitiesObject, targetOfActivitiesArray)
                                     }
                                     break
                             }
                             break
-                        case 'you':
+                        case 'you': // all, single, not have col, row  <=> whos[activity.who] >= 0
                             switch(activity.typeOfTarget) {
                                 case 'all':
-                                    targetImmortalitiesArray.forEach(immortality => {
-                                        effect.objects.push(immortality.index * who * whos[whoAmI])
-                                        effect[typeEffect].push(activity.property.value)
+                                    targetOfActivitiesArray.forEach(immortality => {
+                                        handleComputedDamage(whos, who, immortality, targetOfActivitiesObject, effect, typeEffect, activity)
+                                        if (immortality) {
+                                            activity.statesBonus.forEach(state => {
+                                                if (whos[state.who] >= 0) { // side immortality's main
+                                                    immortality?.states.push(state)
+                                                }
+                                            })
+                                        }
                                     })
+                                    handleDeleteElementOfArray(targetOfActivitiesObject, targetOfActivitiesArray)
                                     break
-                                case 'single':
-                                    effect.objects.push(actor * who * whos[whoAmI])
-                                    effect[typeEffect].push(activity.property.value)
+                                case 'single': // single - you => this immortality's activity
+                                    const targetImmortality = targetOfActivitiesObject[actor]
+                                    handleComputedDamage(whos, who, targetImmortality, targetOfActivitiesObject, effect, typeEffect, activity)
+                                    if (targetImmortality) {
+                                        activity.statesBonus.forEach(state => {
+                                            if (whos[state.who] >= 0) { // side immortality's main
+                                                targetImmortality?.states.push(state)
+                                            }
+                                        })
+                                    }
+                                    handleDeleteElementOfArray(targetOfActivitiesObject, targetOfActivitiesArray)
                                     break
                             }
                             break
@@ -406,7 +400,7 @@ class QuestController {
                 plot.push(roundHistory)
             }
 
-            return { plot, roundHistory, mainImmortalitiesObject, mainImmortalitiesArray, actorFlag }
+            return { plot, roundHistory, skillsList, mainImmortalitiesObject, mainImmortalitiesArray, actorFlag }
         }
 
         function findActor(immortalities, actor, actorFlag) {
@@ -472,6 +466,26 @@ class QuestController {
             function stopCondition(typeOfActivity, col) {
                 return (typeOfActivity.col == 0 && col < field.length) 
                         || (typeOfActivity.col == 2 && col >= 0)
+            }
+        }
+
+        function handleComputedDamage(whos, who, targetImmortalityObject, targetOfImmortalitiesObject, effect, typeEffect, activity) {
+            if (targetImmortalityObject) {
+                targetImmortalityObject.currentStatus.currentlyHP -= (-activity.property.value)
+                effect.objects.push(targetImmortalityObject.index * who * whos[activity.who])
+                effect[typeEffect].push(activity.property.value)
+            }
+            if (targetImmortalityObject.currentStatus.currentlyHP <= 0) {
+                delete targetOfImmortalitiesObject[target.index]
+                
+            }
+        }
+
+        function handleDeleteElementOfArray(targetOfActivitiesObject, targetOfActivitiesArray) {
+            const newImmortalities = Object.keys(targetOfActivitiesObject).map(key => targetOfActivitiesObject[key])
+            newImmortalities.forEach((immortality, index) => targetOfActivitiesArray[index] = immortality)
+            while(newImmortalities.length != targetOfActivitiesArray.length) {
+                targetOfActivitiesArray.pop()
             }
         }
 

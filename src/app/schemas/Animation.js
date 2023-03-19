@@ -2,7 +2,8 @@ const mongoose = require('mongoose')
 const Schema = mongoose.Schema
 const ObjectId = mongoose.ObjectId
 
-const { Figure, Effect, } = require('../models/index')
+const Effect = require('../models/Effect')
+const Figure = require('../models/Figure')
 
 const Animation = new Schema({
     sky: { type: String, default: '', },  // image

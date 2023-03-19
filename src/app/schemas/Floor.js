@@ -24,11 +24,12 @@ const Floor = new Schema({
         property: { type: Property, default: () => ({}),}, // property for the skills
 
         effects: { type: Animation, default: () => ({})},
-        statesBonus: { type: Array, default: [State]}
+        statesBonus: { type: Array, default: [State]},
+        effect: { type: ObjectId, ref: 'Effect' },
     }],
 
-    states: [State], // properties for the states when passive
-    statusBonus: { type: Array, default: [] },
+    // states: [State], // properties for the states when passive
+    statusBonus: { type: Array, default: [Property] },
 })
 
 /**
