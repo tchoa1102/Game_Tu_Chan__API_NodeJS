@@ -17,6 +17,7 @@ const Floor = new Schema({
     startIs: { type: String, required: true, },
     typeOfChant: { type: String, default: 'chanting', },
     consume: { type: Array, default: [] }, // [{hp: }, {mp: }, ...]
+    mainEffect: { type: Animation, default: () => ({})},
     activities: [{
         who: { type: String, default: 'enemy' }, // you / enemy
         typeOfTarget: { type: String, default: 'single', }, // row? col? ...
@@ -24,8 +25,8 @@ const Floor = new Schema({
         property: { type: Property, default: () => ({}),}, // property for the skills
 
         effects: { type: Animation, default: () => ({})},
-        statesBonus: { type: Array, default: [State]},
-        effect: { type: ObjectId, ref: 'Effect' },
+        operateEveryRoundStates: [State],
+        toKeepStatesAlive: [State],
     }],
 
     // states: [State], // properties for the states when passive
