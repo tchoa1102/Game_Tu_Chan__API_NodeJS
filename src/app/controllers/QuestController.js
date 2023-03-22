@@ -80,7 +80,7 @@ class QuestController {
         try {
             const idUser = '117658907214625686230111' || req.session.passport.user._id
 
-            const { whos, levels, typeOfActivity, typeOfTarget } = await Setup.findOne().lean()
+            const { whos, players, levels, typeOfActivity, typeOfTarget } = await Setup.findOne().lean()
             // console.log(levels, typeOfActivity, typeOfTarget)
 
             // user
@@ -136,18 +136,16 @@ class QuestController {
                     && round < maxRound;
                 round ++) {
                 console.log(Object.keys(mountLeftField).length, Object.keys(mountRightField).length, Object.keys(mountLeftField).length > 0 && Object.keys(mountRightField).length > 0)
-                const you = -1
-                const defense = 1
                 const roundHistory = {
                     you: {},
                     defense: {},
                 }
 
                 console.log(`\n--------------------------------------\nRound ${round}\n--------------------------------------\n`)
-                const resultYou = createPlot(round, whos, you, leftField, plot, roundHistory, mountLeftField, actorFlagYou, mountRightField, typeOfActivity, typeOfTarget)
+                const resultYou = createPlot(round, whos, players.you, leftField, plot, roundHistory, mountLeftField, actorFlagYou, mountRightField, typeOfActivity, typeOfTarget)
                 actorFlagYou = resultYou.actorFlag
                 
-                const resultDefense = createPlot(round, whos, defense, rightField, plot, roundHistory, mountRightField, actorFlagDefense, mountLeftField, typeOfActivity, typeOfTarget)
+                const resultDefense = createPlot(round, whos, players.defense, rightField, plot, roundHistory, mountRightField, actorFlagDefense, mountLeftField, typeOfActivity, typeOfTarget)
                 actorFlagDefense = resultDefense.actorFlag
                 // console.log(mountLeftField, mountRightField)
                 console.log(`\n--------------------------------------\n`)
@@ -163,8 +161,8 @@ class QuestController {
             } else if (Object.keys(mountLeftField).length == 0 && Object.keys(mountRightField).length == 0) {
                 resultFight = 'Hòa'
             }
-            immortalitiesUser
-            immortalitiesCluster
+            // immortalitiesUser
+            // immortalitiesCluster
             statesList = statesList.reduce((result, state) => {
                 const newState = {
                     name: state.name,
@@ -185,8 +183,8 @@ class QuestController {
                 return result
             }, {})
 
-            const leftImmortalities = collectImmortality(immortalitiesUser, whos, 'you')
-            const rightImmortalities = collectImmortality(immortalitiesUser, whos, 'defense')
+            const leftImmortalities = collectImmortality(immortalitiesUser, players.you)
+            const rightImmortalities = collectImmortality(immortalitiesUser, players.defense)
             const status = {
                 you: leftImmortalities,
                 defense: rightImmortalities,
@@ -204,10 +202,10 @@ class QuestController {
             // console.log('Immortality User: ', immortalitiesUser)
             // console.log('Immortality Cluster: ', immortalitiesCluster)
             // console.log(plot, plot.length)
-            plot.forEach((round) => {
-                console.log(round)
-            })
-            // plot.forEach((round, index) => console.log(index, round.you.effects, round.defense.effects, '\n'))
+            // plot.forEach((round) => {
+            //     console.log(round)
+            // })
+            plot.forEach((round, index) => console.log(index, round.you.effects, round.defense.effects, '\n'))
             console.log('\n\nThe End!')
             return res.json({
                 avatars,
@@ -234,11 +232,11 @@ class QuestController {
             return totalData
         }
 
-        function collectImmortality(immortalities, whos, who) {
+        function collectImmortality(immortalities, who) {
             const newImmortalities = {}
             immortalities.forEach(immortality => {
                 const newImmortality = {
-                    index: immortality.index * whos[who] * (-1),
+                    index: immortality.index * who,
                     avatar: immortality.avatar,
                     hp: immortality.status.HP,
                     mp: immortality.status.MP,
@@ -680,10 +678,10 @@ class QuestController {
 
         function handleComputedDamage(whos, who, targetImmortalityObject, targetImmortalitiesObject, effect, typeEffect, activity) {
             if (targetImmortalityObject) {
-                console.log('name: ', activity.who, ' ', targetImmortalityObject.currentlyStatus.HP, 'type: ', activity.property.type)
+                console.log('-- name: ', activity.who, ' ', targetImmortalityObject.currentlyStatus.HP, 'type: ', activity.property.type)
                 targetImmortalityObject.currentlyStatus[activity.property.type] -= (-activity.property.value)
 
-                console.log('index: ', targetImmortalityObject.index, ', who: ', who, ', activityWho: ', whos[activity.who], ', kq: ', targetImmortalityObject.index * who * whos[activity.who])
+                console.log('---- index: ', targetImmortalityObject.index, ', who: ', who, ', activityWho: ', whos[activity.who], ', kq: ', targetImmortalityObject.index * who * whos[activity.who])
                 effect.objects.push(targetImmortalityObject.index * who * whos[activity.who])
                 effect[typeEffect].push(activity.property.value)
 
@@ -694,7 +692,7 @@ class QuestController {
 
         }
 
-        function handleComputedDamageFromState(whos, who, targetImmortalityObject, targetImmortalitiesObject, effectStates, typeEffect, state) {
+        function handleComputedDamageFromKeepStateAlive(whos, who, targetImmortalityObject, targetImmortalitiesObject, effectStates, typeEffect, state) {
             if (targetImmortalityObject) {
                 const actionEffect = {
                     type: 'action',
@@ -762,19 +760,19 @@ class QuestController {
                     if ( ! statesOfTargetImmortality[state.effect.name] || statesOfTargetImmortality[state.effect.name].timeline < state.timeline) {
                         statesOfTargetImmortality[state.effect.name] = state
 
-                        handleComputedDamageFromState(whos, who, targetImmortalityObject, targetImmortalitiesObject, effectStates, typeEffect, state)
+                        handleComputedDamageFromKeepStateAlive(whos, who, targetImmortalityObject, targetImmortalitiesObject, effectStates, typeEffect, state)
                     }
                 } else if (whos[state.who] > 0) { //you
                     if ( ! statesOfMainImmortality[state.effect.name] || statesOfMainImmortality[state.effect.name].timeline < state.timeline) {
                         statesOfMainImmortality[state.effect.name] = state
 
-                        handleComputedDamageFromState(whos, who, mainImmortalityObject, mainImmortalitiesObject, effectStates, typeEffect, state)
+                        handleComputedDamageFromKeepStateAlive(whos, who, mainImmortalityObject, mainImmortalitiesObject, effectStates, typeEffect, state)
                     }
                 } else if (whos[state.who] == 0) { // other from your field
                     if ( ! statesOfTargetImmortality[state.effect.name] || statesOfTargetImmortality[state.effect.name].timeline < state.timeline) {
                         statesOfTargetImmortality[state.effect.name] = state
 
-                        handleComputedDamageFromState(whos, who, targetImmortalityObject, targetImmortalitiesObject, effectStates, typeEffect, state)
+                        handleComputedDamageFromKeepStateAlive(whos, who, targetImmortalityObject, targetImmortalitiesObject, effectStates, typeEffect, state)
                     }
                 }
             })
