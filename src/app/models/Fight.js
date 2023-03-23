@@ -7,7 +7,7 @@ class Fight {
         this.field = [[1,2,3], [4,5,6], [7,8,9]]
         // this.leftField = [[1,2,3], [4,5,6], [7,8,9]] // ([[7,8,9], [4,5,6], [1,2,3]]) -> when screen
         // this.rightField = [[1,2,3], [4,5,6], [7,8,9]]
-        this.resultFight = 'Thắng'
+        this.resultFight = 'Thắng Lợi'
         this.actorFlagYou = true
         this.actorFlagDefense = true
         this.skillsList= {}
@@ -40,7 +40,7 @@ class Fight {
             console.log(`\n--------------------------------------\nRound ${this.round}\n--------------------------------------\n`)
             const resultYou = this.createPlot(roundHistory, this.players.you, this.actorFlagYou, this.mountLeftField, this.mountRightField)
             this.actorFlagYou = resultYou.actorFlag
-            const resultDefense = this.createPlot(roundHistory, this.players.defense, this.actorFlagYou, this.mountRightField, this.mountLeftField)
+            const resultDefense = this.createPlot(roundHistory, this.players.defense, this.actorFlagDefense, this.mountRightField, this.mountLeftField)
             this.actorFlagDefense = resultDefense.actorFlag
             // console.log(this.mountLeftField, this.mountRightField)
             console.log(`\n--------------------------------------\n`)
@@ -117,11 +117,12 @@ class Fight {
                 })
             }
             // pointer to mainImmortalitiesObject[indexActor].toKeepStatesAlive
-            const toKeepStatesAlive = mainImmortalitiesObject[indexActor]?.toKeepStatesAlive || undefined
+            const toKeepStatesAlive = actorImmortality?.toKeepStatesAlive || undefined
             if (toKeepStatesAlive &&
                 Object.keys(mainImmortalitiesObject).length > 0 &&
                 Object.keys(enemyImmortalitiesObject).length > 0
             ) {
+                const currentlyStatus = {}
                 Object.keys(toKeepStatesAlive).forEach(key => {
                     // console.log("timeline: ", toKeepStatesAlive[key].timeline)
                     toKeepStatesAlive[key].timeline -= 1
@@ -132,34 +133,54 @@ class Fight {
                             name: key,
                         }
                         effectPreStatus.push(effect)
+
                         delete toKeepStatesAlive[key]
+                    } else {
+                        // -20 => -(-(-20)) = +20, recover status (computed status)
+                        const type = toKeepStatesAlive[key].property.type
+                        if (!currentlyStatus[type]) {
+                            currentlyStatus[type] = actorImmortality.status[type]
+                        }
+                        currentlyStatus[type] -= -toKeepStatesAlive[key].property.value
                     }
                 })
+
+                Object.assign(actorImmortality.currentlyStatus, currentlyStatus)
+                console.log(whoAmI, ' ', actorImmortality.currentlyStatus)
             }
 
             roundHistory[whoAmI].effects = roundHistory[whoAmI].effects.concat(effectPreStatus)
 
             // Choose skill
-            const skillKeys = Object.keys(mainImmortalitiesObject[indexActor].skills)
-            // random select skill
-            const skillIndex = Math.floor(Math.random() * Object.keys(mainImmortalitiesObject[indexActor].skills).length)
+            const skillKeys = Object.keys(actorImmortality.skills)
             // console.log(skillIndex)
-            const skillKey = skillKeys[skillIndex]
-            this.skillsList[skillKey] = mainImmortalitiesObject[indexActor].skills[skillKey]
+            const skillKey = this.findSkill(actorImmortality, skillKeys)
+            this.skillsList[skillKey] = actorImmortality.skills[skillKey]
 
-            // pointer to mainImmortalitiesObject[indexActor].skills['Hỏa Cầu'].floor.activities
-            const activities = mainImmortalitiesObject[indexActor].skills[skillKey].floor.activities
+            // pointer to floor
+            const floor = actorImmortality.skills[skillKey].floor
+            const consume = floor.consume
+            // computed consume of skill
+            consume.forEach(fee => {
+                const result = actorImmortality.currentlyStatus[fee.type] - (-fee.value)
+                if (result < 0) {
+                    actorImmortality.currentlyStatus[fee.type] = 0
+                }
+
+                actorImmortality.currentlyStatus[fee.type] = result
+            })
+
+            // pointer to activities
+            const activities = floor.activities
             for (const activity of activities) {
                 if (
                     Object.keys(mainImmortalitiesObject).length == 0 &&
                     Object.keys(enemyImmortalitiesObject).length == 0
-                ) {
-                    break
-                }
+                ) { break }
                 const typeEffect = this.findTypeEffect(activity.property.value)
 
-                //////////////////////////////////////////////////////////////// có vẻ có vấn đề ở whos?
-                const targetOfActivitiesObject = (this.whos[activity.who] < 0) ? enemyImmortalitiesObject : mainImmortalitiesObject
+                const targetOfActivitiesObject = 
+                    (this.whos[activity.who] < 0) ? enemyImmortalitiesObject : mainImmortalitiesObject
                 // console.log(targetOfActivitiesObject)
                 // console.log(activity.statesBonus)
 
@@ -279,12 +300,6 @@ class Fight {
                 // console.log('\n\n\n\nroundHistory: ', roundHistory[whoAmI].effects)
                 roundHistory[whoAmI].effects = roundHistory[whoAmI].effects.concat(effectAfterSkill)
                 // console.log('roundHistory: ', roundHistory[whoAmI].effects)
-                if (
-                    Object.keys(mainImmortalitiesObject).length == 0 &&
-                    Object.keys(enemyImmortalitiesObject).length == 0
-                ) {
-                    break
-                }
             }
             
             // console.log('mainImmortalitiesObject: ', mainImmortalitiesObject, '\n########\n')
@@ -379,12 +394,29 @@ class Fight {
         return 'damages'
     }
 
+    findSkill(actorImmortality, skillKeys) {
+        // filter skills can active
+        const newSkillKeys = skillKeys.filter(key => {
+            const floor = actorImmortality.skills[key].floor
+            const consume = floor.consume
+            // computed consume of skill
+            for(let fee of consume) {
+                const result = actorImmortality.currentlyStatus[fee.type] - (-fee.value)
+                if (result < 0) return false
+            }
+            return true
+        })
+        const skillIndex = Math.floor(Math.random() * newSkillKeys.length)
+
+        return newSkillKeys[skillIndex]
+    }
+
     handleComputedDamage(who, targetImmortalityObject, targetImmortalitiesObject, effect, typeEffect, activity) {
         if (targetImmortalityObject) {
-            console.log('-- name: ', activity.who, ' ', targetImmortalityObject.currentlyStatus.HP, 'type: ', activity.property.type)
+            // console.log('-- name: ', activity.who, ' ', targetImmortalityObject.currentlyStatus.HP, 'type: ', activity.property.type)
             targetImmortalityObject.currentlyStatus[activity.property.type] -= (-activity.property.value)
 
-            console.log('---- index: ', targetImmortalityObject.index, ', who: ', who, ', activityWho: ', this.whos[activity.who], ', kq: ', targetImmortalityObject.index * who * this.whos[activity.who])
+            // console.log('---- index: ', targetImmortalityObject.index, ', who: ', who, ', activityWho: ', this.whos[activity.who], ', kq: ', targetImmortalityObject.index * who * this.whos[activity.who])
             effect.objects.push(targetImmortalityObject.index * who * this.whos[activity.who])
             effect[typeEffect].push(activity.property.value)
 
@@ -410,6 +442,10 @@ class Fight {
             }
             
             targetImmortalityObject.currentlyStatus[state.property.type] -= (-state.property.value)
+
+            if (targetImmortalityObject.currentlyStatus[state.property.type] < 0) {
+                targetImmortalityObject.currentlyStatus[state.property.type] = 0
+            }
 
             effect.objects.push(targetImmortalityObject.index * who * this.whos[state.who])
             effect[typeEffect].push(state.property.value)

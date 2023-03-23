@@ -156,16 +156,16 @@ class QuestController {
             // console.log(skillsList['Hỏa Cầu'].floor.mainEffect)
             // console.log('StatesList: ', statesList) //done
             // console.log('Status: ', status) //done
-            // console.log('mountLeftField: ', mountLeftField)
-            // console.log('mountRightField: ', mountRightField)
+            console.log('mountLeftField: ', mountLeftField)
+            console.log('mountRightField: ', mountRightField)
             // console.log('Immortality User: ', immortalitiesUser)
             // console.log('Immortality Cluster: ', immortalitiesCluster)
             // console.log(plot, plot.length)
             // plot.forEach((round) => {
             //     console.log(round)
             // })
-            plot.forEach((round, index) => console.log(index, round.you.effects, round.defense.effects, '\n'))
-            console.log('\n\nThe End!')
+            // plot.forEach((round, index) => console.log(index, round.you.effects, round.defense.effects, '\n'))
+            // console.log('\n\nThe End!')
             return res.json({
                 avatars,
                 skills: newSkills,
@@ -177,6 +177,34 @@ class QuestController {
             })
         } catch (error) {
             return next(error)
+        }
+
+        function isLargerOrEqual(levels, target, nameLevel, step) {
+            if (levels[target.name].index > levels[nameLevel].index) {
+                return true
+            } else if (
+                levels[target.name].index == levels[nameLevel].index &&
+                levels[target.name][target.level].index >= levels[nameLevel][step].index 
+            ) {
+                return true
+            }
+
+            return false
+        }
+
+        function findIndicatorIncrement(levels, immortality) {
+            let indicator = 1
+            Object.keys(levels).forEach( nameLevel => {
+                Object.keys(levels[nameLevel]).forEach( step => {
+                    if (isLargerOrEqual(levels, immortality.level, nameLevel, step)) {
+                        const eraseX = levels[nameLevel][step].increase.substr(1)
+                        const increase = Number.parseFloat(eraseX)
+                        indicator *= increase
+                    }
+                })
+            })
+
+            return indicator
         }
 
         async function collectAvatars(avatars, immortalities) {
@@ -244,44 +272,35 @@ class QuestController {
                 // increase from skill
 
             })
+        }
 
-            function isLargerOrEqual(levels, target, nameLevel, step) {
-                if (levels[target.name].index > levels[nameLevel].index) {
-                    return true
-                } else if (
-                    levels[target.name].index == levels[nameLevel].index &&
-                    levels[target.name][target.level].index >= levels[nameLevel][step].index 
-                ) {
-                    return true
-                }
+        function increaseStatusFromLevel(levels, immortality) {
+            const increase = findIndicatorIncrement(levels, immortality)
+            Object.keys(immortality.status).forEach( property => {
+                immortality.status[property] *= increase
+            })
+            Object.keys(immortality.currentlyStatus).forEach( property => {
+                immortality.currentlyStatus[property] *= increase
+            })
+        }
 
-                return false
-            }
-
-            function increaseStatusFromLevel(levels, immortality) {
-                Object.keys(levels).forEach( nameLevel => {
-                    Object.keys(levels[nameLevel]).forEach( step => {
-                        if (isLargerOrEqual(levels, immortality.level, nameLevel, step)) {
-                            Object.keys(immortality.status).forEach( property => {
-                                const eraseX = levels[nameLevel][step].increase.substr(1)
-                                const increase = Number.parseFloat(eraseX)
-                                immortality.status[property] *= increase
-                            })
+        function increaseFromEquipment(equipments, immortalities) {
+            equipments.forEach( equip => {
+                immortalities.forEach( immortality => {
+                    if (immortality._id.toString() == equip.wearIs.toString()) {
+                        // console.log(equip)
+                        const increase = equip.equip.property.value
+                        immortality.status[equip.equip.property.type] += increase
+                        // immortality.status[equip.equip.property.type] += increase
+                        if (equip.equip.property.type == 'HP') {
+                            immortality.currentlyStatus.currentlyHP += increase
                         }
-                    })
-                })
-            }
-
-            function increaseFromEquipment(equipments, immortalitiesUser) {
-                equipments.forEach( equip => {
-                    immortalitiesUser.forEach( immortality => {
-                        if (immortality._id.toString() == equip.wearIs.toString()) {
-                            // console.log(equip)
-                            immortality.status[equip.equip.property.type] += equip.equip.property.value
+                        if (equip.equip.property.type == 'MP') {
+                            immortality.currentlyStatus.currentlyMP += increase
                         }
-                    })
+                    }
                 })
-            }
+            })
         }
 
         function mountedField(field, immortalities) {
