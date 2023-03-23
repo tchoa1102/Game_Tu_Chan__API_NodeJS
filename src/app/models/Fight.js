@@ -4,7 +4,7 @@ class Fight {
         this.round = 0
         this.maxRound = 31
         // [col][row]
-        this.field = [[1,2,3][4,5,6][7,8,9]]
+        this.field = [[1,2,3], [4,5,6], [7,8,9]]
         // this.leftField = [[1,2,3], [4,5,6], [7,8,9]] // ([[7,8,9], [4,5,6], [1,2,3]]) -> when screen
         // this.rightField = [[1,2,3], [4,5,6], [7,8,9]]
         this.resultFight = 'Thắng'
@@ -18,8 +18,8 @@ class Fight {
         this.players = players
         this.mountLeftField = mountLeftField
         this.mountRightField = mountRightField
-        this.typeOfActivity = typeOfActivity
-        this.typeOfTarget = typeOfTarget
+        this.typeOfActivities = typeOfActivity
+        this.typeOfTargets = typeOfTarget
 
     }
 
@@ -38,9 +38,9 @@ class Fight {
             }
 
             console.log(`\n--------------------------------------\nRound ${this.round}\n--------------------------------------\n`)
-            const resultYou = this.createPlot(roundHistory, this.players.you, this.actorFlagYou, mountLeftField, mountRightField)
+            const resultYou = this.createPlot(roundHistory, this.players.you, this.actorFlagYou, this.mountLeftField, this.mountRightField)
             this.actorFlagYou = resultYou.actorFlag
-            const resultDefense = this.createPlot(roundHistory, this.players.defense, this.actorFlagYou, mountRightField, mountLeftField)
+            const resultDefense = this.createPlot(roundHistory, this.players.defense, this.actorFlagYou, this.mountRightField, this.mountLeftField)
             this.actorFlagDefense = resultDefense.actorFlag
             // console.log(this.mountLeftField, this.mountRightField)
             console.log(`\n--------------------------------------\n`)
@@ -55,17 +55,24 @@ class Fight {
         } else if (Object.keys(this.mountLeftField).length == 0 && Object.keys(this.mountRightField).length == 0) {
             this.resultFight = 'Hòa'
         }
+
+        return {
+            resultFight: this.resultFight,
+            skillsList: this.skillsList,
+            statesList: this.statesList,
+            plot: this.plot,
+            mountLeftField: this.mountLeftField,
+            mountRightField: this.mountRightField,
+        }
     }
 
     createPlot(roundHistory, who, actorFlag, mainImmortalitiesObject, enemyImmortalitiesObject) {
         const whoAmI = (who < 0 ? 'you' : 'defense')
-        // const skillsList = []
-        // const statesList = []
-        const findActorResult = findActor(mainImmortalitiesObject, undefined, actorFlag)
+        const findActorResult = this.findActor(mainImmortalitiesObject, undefined, actorFlag)
         const indexActor = findActorResult.indexActor
         actorFlag = findActorResult.actorFlag
         // find row of actor
-        const rowOfActor = findRowOfActor(indexActor)
+        const rowOfActor = this.findRowOfActor(indexActor)
 
         roundHistory[whoAmI].actor = indexActor * who
         roundHistory[whoAmI].effects = []
@@ -149,7 +156,7 @@ class Fight {
                 ) {
                     break
                 }
-                const typeEffect = findTypeEffect(activity.property.value)
+                const typeEffect = this.findTypeEffect(activity.property.value)
 
                 //////////////////////////////////////////////////////////////// có vẻ có vấn đề ở whos?
                 const targetOfActivitiesObject = (this.whos[activity.who] < 0) ? enemyImmortalitiesObject : mainImmortalitiesObject
@@ -171,66 +178,66 @@ class Fight {
                             case 'all':
                                 Object.keys(targetOfActivitiesObject).forEach(key => {
                                     const immortality = targetOfActivitiesObject[key]
-                                    handleComputedDamage(who, immortality, targetOfActivitiesObject, effect, typeEffect, activity)
+                                    this.handleComputedDamage(who, immortality, targetOfActivitiesObject, effect, typeEffect, activity)
 
                                     if (mainImmortalitiesObject[indexActor] && immortality) {
                                         const mainImmortality = mainImmortalitiesObject[indexActor]
 
-                                        addState(statesList, mainImmortality, immortality, activity.operateEveryRoundStates, effectAfterSkill)
-                                        addKeepStateAlive(who, statesList, mainImmortality, mainImmortalitiesObject, targetImmortality, targetOfActivitiesObject, activity.toKeepStatesAlive, effectAfterSkill)
+                                        this.addState(mainImmortality, immortality, activity.operateEveryRoundStates, effectAfterSkill)
+                                        this.addKeepStateAlive(who, mainImmortality, mainImmortalitiesObject, targetImmortality, targetOfActivitiesObject, activity.toKeepStatesAlive, effectAfterSkill)
                                     }
                                 })
                                 break
                             default: // col, row, single
-                                const locationOfTarget = findTarget(
-                                                    rowOfActor, this.typeOfActivity[activity.typeOfActivity], targetOfActivitiesObject)
+                                const locationOfTarget = this.findTarget(
+                                                    rowOfActor, this.typeOfActivities[activity.typeOfActivity], targetOfActivitiesObject)
                                 if (locationOfTarget.col != -1) {
-                                    const vectorArguments = typeOfTarget[activity.typeOfTarget]
+                                    const vectorArguments = this.typeOfTargets[activity.typeOfTarget]
                                     
                                     if (vectorArguments.x > 0) {
-                                        locationOfTarget.col = field.length - 1
+                                        locationOfTarget.col = this.field.length - 1
                                         for(locationOfTarget.col; locationOfTarget.col > 0; locationOfTarget.col --) {
                                             // console.log(`Attack ${locationOfTarget.row} ${locationOfTarget.col}`)
-                                            const index = field[locationOfTarget.col][locationOfTarget.row]
+                                            const index = this.field[locationOfTarget.col][locationOfTarget.row]
                                             const targetImmortality = targetOfActivitiesObject[ index ]
-                                            handleComputedDamage(whos, who, targetImmortality, targetOfActivitiesObject, effect, typeEffect, activity)
+                                            this.handleComputedDamage(who, targetImmortality, targetOfActivitiesObject, effect, typeEffect, activity)
 
                                             if (mainImmortalitiesObject[indexActor] && targetImmortality) {
                                                 const mainImmortality = mainImmortalitiesObject[indexActor]
 
-                                                addState(whos, statesList, mainImmortality, targetImmortality, activity.operateEveryRoundStates, effectAfterSkill)
-                                                addKeepStateAlive(whos, who, statesList, mainImmortality, mainImmortalitiesObject, targetImmortality, targetOfActivitiesObject, activity.toKeepStatesAlive, effectAfterSkill)
+                                                this.addState(mainImmortality, targetImmortality, activity.operateEveryRoundStates, effectAfterSkill)
+                                                this.addKeepStateAlive(who, mainImmortality, mainImmortalitiesObject, targetImmortality, targetOfActivitiesObject, activity.toKeepStatesAlive, effectAfterSkill)
                                             }
                                         }
                                         // erase element have hp <= 0
-                                        handleDeleteElementOfArray(targetOfActivitiesObject, targetOfActivitiesObject)
+                                        this.handleDeleteElementOfArray(targetOfActivitiesObject, targetOfActivitiesObject)
                                     }
                                     if (vectorArguments.y > 0) {
-                                        locationOfTarget.row = field[0].length - 1
+                                        locationOfTarget.row = this.field[0].length - 1
                                         for(locationOfTarget.row; locationOfTarget.row > 0; locationOfTarget.row --) {
                                             const index = field[locationOfTarget.col][locationOfTarget.row]
                                             const targetImmortality = targetOfActivitiesObject[ index ]
-                                            handleComputedDamage(whos, who, targetImmortality, targetOfActivitiesObject, effect, typeEffect, activity)
+                                            this.handleComputedDamage(who, targetImmortality, targetOfActivitiesObject, effect, typeEffect, activity)
 
                                             if (mainImmortalitiesObject[indexActor] && targetImmortality) {
                                                 const mainImmortality = mainImmortalitiesObject[indexActor]
 
-                                                addState(whos, statesList, operateEveryRoundStatesMain, targetImmortality, activity.operateEveryRoundStates, effectAfterSkill)
-                                                addKeepStateAlive(whos, who, statesList, mainImmortality, mainImmortalitiesObject, targetImmortality, targetOfActivitiesObject, activity.toKeepStatesAlive, effectAfterSkill)
+                                                this.addState(mainImmortality, targetImmortality, activity.operateEveryRoundStates, effectAfterSkill)
+                                                this.addKeepStateAlive(who, mainImmortality, mainImmortalitiesObject, targetImmortality, targetOfActivitiesObject, activity.toKeepStatesAlive, effectAfterSkill)
                                             }
                                         }
                                     }
 
                                     // Case element be effected first
-                                    const index = field[locationOfTarget.col][locationOfTarget.row]
+                                    const index = this.field[locationOfTarget.col][locationOfTarget.row]
                                     const targetImmortality = targetOfActivitiesObject[index]
-                                    handleComputedDamage(whos, who, targetImmortality, targetOfActivitiesObject, effect, typeEffect, activity)
+                                    this.handleComputedDamage(who, targetImmortality, targetOfActivitiesObject, effect, typeEffect, activity)
 
                                     if (mainImmortalitiesObject[indexActor] && targetImmortality) {
                                         const mainImmortality = mainImmortalitiesObject[indexActor]
 
-                                        addState(whos, statesList, mainImmortality, targetImmortality, activity.operateEveryRoundStates, effectAfterSkill)
-                                        addKeepStateAlive(whos, who, statesList, mainImmortality, mainImmortalitiesObject, targetImmortality, targetOfActivitiesObject, activity.toKeepStatesAlive, effectAfterSkill)
+                                        this.addState(mainImmortality, targetImmortality, activity.operateEveryRoundStates, effectAfterSkill)
+                                        this.addKeepStateAlive(who, mainImmortality, mainImmortalitiesObject, targetImmortality, targetOfActivitiesObject, activity.toKeepStatesAlive, effectAfterSkill)
                                     }
                                     // console.log('\n\n', indexActor, mainImmortalitiesObject[indexActor].operateEveryRoundStates, '\n', index, targetImmortality.operateEveryRoundStates)
                                 }
@@ -242,25 +249,25 @@ class Fight {
                             case 'all':
                                 Object.keys(targetOfActivitiesObject).forEach(key => {
                                     const immortality = targetOfActivitiesObject[key]
-                                    handleComputedDamage(whos, who, immortality, targetOfActivitiesObject, effect, typeEffect, activity)
+                                    this.handleComputedDamage(who, immortality, targetOfActivitiesObject, effect, typeEffect, activity)
 
                                     if (mainImmortalitiesObject[indexActor] && immortality) {
                                         const mainImmortality = mainImmortalitiesObject[indexActor]
 
-                                        addState(whos, statesList, mainImmortality, immortality, activity.operateEveryRoundStates, effectAfterSkill)
-                                        addKeepStateAlive(whos, who, statesList, mainImmortality, mainImmortalitiesObject, targetImmortality, targetOfActivitiesObject, activity.toKeepStatesAlive, effectAfterSkill)
+                                        this.addState(mainImmortality, immortality, activity.operateEveryRoundStates, effectAfterSkill)
+                                        this.addKeepStateAlive(who, mainImmortality, mainImmortalitiesObject, targetImmortality, targetOfActivitiesObject, activity.toKeepStatesAlive, effectAfterSkill)
                                     }
                                 })
                                 break
                             case 'single': // single - you => this immortality's activity
                                 const targetImmortality = targetOfActivitiesObject[indexActor]
-                                handleComputedDamage(whos, who, targetImmortality, targetOfActivitiesObject, effect, typeEffect, activity)
+                                this.handleComputedDamage(who, targetImmortality, targetOfActivitiesObject, effect, typeEffect, activity)
 
                                 if (mainImmortalitiesObject[indexActor] && targetImmortality) {
                                     const mainImmortality = mainImmortalitiesObject[indexActor]
 
-                                    addState(whos, statesList, mainImmortality, targetImmortality, activity.operateEveryRoundStates, effectAfterSkill)
-                                    addKeepStateAlive(whos, who, statesList, mainImmortality, mainImmortalitiesObject, targetImmortality, targetOfActivitiesObject, activity.toKeepStatesAlive, effectAfterSkill)
+                                    this.addState(mainImmortality, targetImmortality, activity.operateEveryRoundStates, effectAfterSkill)
+                                    this.addKeepStateAlive(who, mainImmortality, mainImmortalitiesObject, targetImmortality, targetOfActivitiesObject, activity.toKeepStatesAlive, effectAfterSkill)
                                 }
                                 // console.log('\n\n', indexActor, mainImmortalitiesObject[indexActor].operateEveryRoundStates, '\n', indexActor, targetImmortality.operateEveryRoundStates)
                                 break
@@ -284,13 +291,13 @@ class Fight {
             // console.log('enemyImmortalitiesObject: ', enemyImmortalitiesObject, '\n########\n')
         }
 
-        return { plot, roundHistory, skillsList, statesList, mainImmortalitiesObject, actorFlag }
+        return { roundHistory, mainImmortalitiesObject, actorFlag }
     }
 
-    findActor(field, immortalities, indexActor, actorFlag) {
-        for(let col = 0; col < field.length; col++) {
-            for(let row = 0; row < field[col].length; row++) {
-                const index = field[col][row]
+    findActor(immortalities, indexActor, actorFlag) {
+        for(let col = 0; col < this.field.length; col++) {
+            for(let row = 0; row < this.field[col].length; row++) {
+                const index = this.field[col][row]
                 const immortality = immortalities[index]
                 // if it not attack then attack
                 if (immortality && immortality?.isActor != actorFlag) {
@@ -314,15 +321,15 @@ class Fight {
         // last element still not is selected
         if (!indexActor && Object.keys(immortalities).length > 0) {
             // reverse actorFlag so that can't change mountField[numData].actor
-            return findActor(field, immortalities, indexActor, !actorFlag)
+            return this.findActor(immortalities, indexActor, !actorFlag)
         }
 
         return { indexActor, actorFlag }
     }
 
-    findRowOfActor(actor, field) {
+    findRowOfActor(actor) {
         let rowOfActor = -1
-        field.forEach(col => {
+        this.field.forEach(col => {
             for(let row = 0; row < col.length; row ++) {
                 if (col[row] == actor) rowOfActor = row
             }
@@ -331,18 +338,19 @@ class Fight {
         return rowOfActor
     }
 
-    findTarget(rowOfActor, typeOfActivity, field, mountFieldTarget) {
+    findTarget(rowOfActor, typeOfActivity, mountFieldTarget) {
+        const _this = this
         for(let row = rowOfActor; row >= 0; row --) {
             for(let col = typeOfActivity.col; stopCondition(typeOfActivity, col); col = computedColumn(typeOfActivity, col)) {
-                if (mountFieldTarget[field[col][row]]) {
+                if (mountFieldTarget[this.field[col][row]]) {
                     return { col, row }
                 }
             }
         }
 
-        for(let row = rowOfActor; row < field[0].length; row ++) {
+        for(let row = rowOfActor; row < this.field[0].length; row ++) {
             for(let col = typeOfActivity.col; stopCondition(typeOfActivity, col); col = computedColumn(typeOfActivity, col)) {
-                if (mountFieldTarget[field[col][row]]) {
+                if (mountFieldTarget[this.field[col][row]]) {
                     return { col, row }
                 }
             }
@@ -361,7 +369,7 @@ class Fight {
         }
 
         function stopCondition(typeOfActivity, col) {
-            return (typeOfActivity.col == 0 && col < field.length) 
+            return (typeOfActivity.col == 0 && col < _this.field.length) 
                     || (typeOfActivity.col == 2 && col >= 0)
         }
     }
@@ -371,13 +379,13 @@ class Fight {
         return 'damages'
     }
 
-    handleComputedDamage(whos, who, targetImmortalityObject, targetImmortalitiesObject, effect, typeEffect, activity) {
+    handleComputedDamage(who, targetImmortalityObject, targetImmortalitiesObject, effect, typeEffect, activity) {
         if (targetImmortalityObject) {
             console.log('-- name: ', activity.who, ' ', targetImmortalityObject.currentlyStatus.HP, 'type: ', activity.property.type)
             targetImmortalityObject.currentlyStatus[activity.property.type] -= (-activity.property.value)
 
-            console.log('---- index: ', targetImmortalityObject.index, ', who: ', who, ', activityWho: ', whos[activity.who], ', kq: ', targetImmortalityObject.index * who * whos[activity.who])
-            effect.objects.push(targetImmortalityObject.index * who * whos[activity.who])
+            console.log('---- index: ', targetImmortalityObject.index, ', who: ', who, ', activityWho: ', this.whos[activity.who], ', kq: ', targetImmortalityObject.index * who * this.whos[activity.who])
+            effect.objects.push(targetImmortalityObject.index * who * this.whos[activity.who])
             effect[typeEffect].push(activity.property.value)
 
             if (targetImmortalityObject.currentlyStatus.HP <= 0) {
@@ -387,12 +395,12 @@ class Fight {
 
     }
 
-    handleComputedDamageFromKeepStateAlive(whos, who, targetImmortalityObject, targetImmortalitiesObject, effectStates, typeEffect, state) {
+    handleComputedDamageFromKeepStateAlive(who, targetImmortalityObject, targetImmortalitiesObject, effectStates, typeEffect, state) {
         if (targetImmortalityObject) {
             const actionEffect = {
                 type: 'action',
                 name: state.effect.name,
-                objects: [targetImmortalityObject.index * who * whos[state.who]],
+                objects: [targetImmortalityObject.index * who * this.whos[state.who]],
             }
             effectStates.push(actionEffect)
             const effect = {
@@ -403,7 +411,7 @@ class Fight {
             
             targetImmortalityObject.currentlyStatus[state.property.type] -= (-state.property.value)
 
-            effect.objects.push(targetImmortalityObject.index * who * whos[state.who])
+            effect.objects.push(targetImmortalityObject.index * who * this.whos[state.who])
             effect[typeEffect].push(state.property.value)
             effectStates.push(effect)
 
@@ -413,61 +421,61 @@ class Fight {
         }
     }
 
-    addState(whos, statesList, who, mainImmortality, targetImmortality, operateEveryRoundStates, effectStates) { // other: thisImmortality, immortalities same same field
+    addState(who, mainImmortality, targetImmortality, operateEveryRoundStates, effectStates) { // other: thisImmortality, immortalities same same field
         const statesOfMainImmortality = mainImmortality.operateEveryRoundStates
         const statesOfTargetImmortality = targetImmortality.operateEveryRoundStates
 
         operateEveryRoundStates.forEach(state => {
-            statesList.push(new Object(state.effect))
+            this.statesList.push(new Object(state.effect))
             const actionEffect = {
                 type: 'action',
                 name: state.effect.name,
                 objects: [],
             }
-            if (whos[state.who] < 0) { // enemy
+            if (this.whos[state.who] < 0) { // enemy
                 if ( ! statesOfTargetImmortality[state.effect.name] || statesOfTargetImmortality[state.effect.name].timeline < state.timeline) {
                     statesOfTargetImmortality[state.effect.name] = state
-                    actionEffect.objects.push(targetImmortality.index * who * whos[state.who])
+                    actionEffect.objects.push(targetImmortality.index * who * this.whos[state.who])
                 }
-            } else if (whos[state.who] > 0) { //you
+            } else if (this.whos[state.who] > 0) { //you
                 if ( ! statesOfMainImmortality[state.effect.name] || statesOfMainImmortality[state.effect.name].timeline < state.timeline) {
                     statesOfMainImmortality[state.effect.name] = state
-                    actionEffect.objects.push(mainImmortality.index * who * whos[state.who])
+                    actionEffect.objects.push(mainImmortality.index * who * this.whos[state.who])
                 }
-            } else if (whos[state.who] == 0) { // other from your field
+            } else if (this.whos[state.who] == 0) { // other from your field
                 if ( ! statesOfTargetImmortality[state.effect.name] || statesOfTargetImmortality[state.effect.name].timeline < state.timeline) {
                     statesOfTargetImmortality[state.effect.name] = state
-                    actionEffect.objects.push(targetImmortality.index * who * whos[state.who])
+                    actionEffect.objects.push(targetImmortality.index * who * this.whos[state.who])
                 }
             }
             effectStates.push(actionEffect)
         })
     }
 
-    addKeepStateAlive(whos, who, statesList, mainImmortalityObject, mainImmortalitiesObject, targetImmortalityObject, targetImmortalitiesObject, operateEveryRoundStates, effectStates) { // other: thisImmortality, immortalities same same field
+    addKeepStateAlive(who, mainImmortalityObject, mainImmortalitiesObject, targetImmortalityObject, targetImmortalitiesObject, operateEveryRoundStates, effectStates) { // other: thisImmortality, immortalities same same field
         const statesOfMainImmortality = mainImmortalityObject.toKeepStatesAlive
         const statesOfTargetImmortality = targetImmortalityObject.toKeepStatesAlive
 
         operateEveryRoundStates.forEach(state => {
-            statesList.push(new Object(state.effect))
-            const typeEffect = findTypeEffect(state.property.value)
-            if (whos[state.who] < 0) { // enemy
+            this.statesList.push(new Object(state.effect))
+            const typeEffect = this.findTypeEffect(state.property.value)
+            if (this.whos[state.who] < 0) { // enemy
                 if ( ! statesOfTargetImmortality[state.effect.name] || statesOfTargetImmortality[state.effect.name].timeline < state.timeline) {
                     statesOfTargetImmortality[state.effect.name] = state
 
-                    handleComputedDamageFromKeepStateAlive(whos, who, targetImmortalityObject, targetImmortalitiesObject, effectStates, typeEffect, state)
+                    this.handleComputedDamageFromKeepStateAlive(who, targetImmortalityObject, targetImmortalitiesObject, effectStates, typeEffect, state)
                 }
-            } else if (whos[state.who] > 0) { //you
+            } else if (this.whos[state.who] > 0) { //you
                 if ( ! statesOfMainImmortality[state.effect.name] || statesOfMainImmortality[state.effect.name].timeline < state.timeline) {
                     statesOfMainImmortality[state.effect.name] = state
 
-                    handleComputedDamageFromKeepStateAlive(whos, who, mainImmortalityObject, mainImmortalitiesObject, effectStates, typeEffect, state)
+                    this.handleComputedDamageFromKeepStateAlive(who, mainImmortalityObject, mainImmortalitiesObject, effectStates, typeEffect, state)
                 }
-            } else if (whos[state.who] == 0) { // other from your field
+            } else if (this.whos[state.who] == 0) { // other from your field
                 if ( ! statesOfTargetImmortality[state.effect.name] || statesOfTargetImmortality[state.effect.name].timeline < state.timeline) {
                     statesOfTargetImmortality[state.effect.name] = state
 
-                    handleComputedDamageFromKeepStateAlive(whos, who, targetImmortalityObject, targetImmortalitiesObject, effectStates, typeEffect, state)
+                    this.handleComputedDamageFromKeepStateAlive(who, targetImmortalityObject, targetImmortalitiesObject, effectStates, typeEffect, state)
                 }
             }
         })

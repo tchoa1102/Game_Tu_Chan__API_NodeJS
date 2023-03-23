@@ -106,7 +106,6 @@ class QuestController {
             increase(levels, immortalitiesCluster, equipmentsOfUser)
 
             // fight
-            const plot = []
             const mountLeftField = {}
             const mountRightField = {}
             mountedField(mountLeftField, immortalitiesUser)
@@ -124,8 +123,12 @@ class QuestController {
             let statesList = []
 
             // action
-            new Fight().run()
-            
+            const result = new Fight(whos, players, mountLeftField, mountRightField, typeOfActivity, typeOfTarget)
+                                .run()
+
+            const plot = [...result.plot]
+            skillsList = new Object(result.skillsList)
+            statesList = [...result.statesList]
             // immortalitiesUser
             // immortalitiesCluster
             statesList = statesList.reduce((result, state) => {
@@ -178,7 +181,7 @@ class QuestController {
                 states: statesList,
                 status,
                 plot,
-                resultFight,
+                resultFight: result.resultFight,
                 totalData,
             })
         } catch (error) {
