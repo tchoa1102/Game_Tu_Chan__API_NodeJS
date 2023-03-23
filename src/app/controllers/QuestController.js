@@ -110,13 +110,6 @@ class QuestController {
             const mountRightField = {}
             mountedField(mountLeftField, immortalitiesUser)
             mountedField(mountRightField, immortalitiesCluster)
-
-            // pointer to mountLeftField and mountRightField
-            // const immortalitiesLeft = Object.keys(mountLeftField).map(key => mountLeftField[key])
-            // const immortalitiesRight = [...immortalitiesCluster]
-            // immortalitiesLeft.sort((a, b) => a.index - b.index)
-            // immortalitiesRight.sort((a, b) => a.index - b.index)
-
             // const queue = new queueMicrotask // ??
 
             let skillsList = {}
@@ -129,9 +122,9 @@ class QuestController {
             const plot = [...result.plot]
             skillsList = new Object(result.skillsList)
             statesList = [...result.statesList]
-            // immortalitiesUser
-            // immortalitiesCluster
-            statesList = statesList.reduce((result, state) => {
+
+            // Covert stateList
+            const states = statesList.reduce((result, state) => {
                 const newState = {
                     name: state.name,
                     image: state.image,
@@ -151,14 +144,12 @@ class QuestController {
                 return result
             }, {})
 
-            const leftImmortalities = collectImmortality(immortalitiesUser, players.you)
-            const rightImmortalities = collectImmortality(immortalitiesUser, players.defense)
-            const status = {
-                you: leftImmortalities,
-                defense: rightImmortalities,
-            }
+            const status = {}
+            status.you = collectImmortality(immortalitiesUser, players.you)
+            status.defense = collectImmortality(immortalitiesUser, players.defense)
             const { newSkills, totalData: td } = collectSkills(skillsList)
             totalData += td
+
             // console.log('\n\n\nresult: ')
             // console.log('Avatars: ', avatars) //done
             // console.log('SkillsList: ', skills) //done
@@ -178,7 +169,7 @@ class QuestController {
             return res.json({
                 avatars,
                 skills: newSkills,
-                states: statesList,
+                states,
                 status,
                 plot,
                 resultFight: result.resultFight,
