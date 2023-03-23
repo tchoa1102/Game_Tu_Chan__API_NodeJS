@@ -41,7 +41,7 @@ class Fight {
             const resultYou = this.createPlot(roundHistory, this.players.you, this.actorFlagYou, mountLeftField, mountRightField)
             this.actorFlagYou = resultYou.actorFlag
             const resultDefense = this.createPlot(roundHistory, this.players.defense, this.actorFlagYou, mountRightField, mountLeftField)
-            this.actorFlagDefense = resultYou.actorFlag
+            this.actorFlagDefense = resultDefense.actorFlag
             // console.log(this.mountLeftField, this.mountRightField)
             console.log(`\n--------------------------------------\n`)
 
