@@ -14,17 +14,15 @@ const Floor = new Schema({
     trainedTime: { type: Number, default: 0},
     requirements: { type: Array, default: [], }, // required resources to train
     
-    startIs: { type: String, required: true, },
     typeOfChant: { type: String, default: 'chanting', },
     consume: { type: Array, default: [] }, // [{hp: }, {mp: }, ...]
-    mainEffect: { type: Animation, default: () => ({})},
     activities: [{
         who: { type: String, default: 'enemy' }, // you / enemy
         typeOfTarget: { type: String, default: 'single', }, // row? col? ...
         typeOfActivity: { type: String, default: 'first', }, // first / middle / last
         property: { type: Property, default: () => ({}),}, // property for the skills
 
-        effects: { type: Animation, default: () => ({})},
+        effects: { type: Animation }, // effect skill vd flame, heal
         operateEveryRoundStates: [State],
         toKeepStatesAlive: [State],
     }],
@@ -45,15 +43,14 @@ const Floor = new Schema({
  *  },
  * }
  * 
- * { -> heal of states
+ * { property.value > 0 -> heal of states
  *  "who": "you",
  *  "timeline": 3,
- *  "name": "heal",
  *  "effect": "1NKVTk1G0LXMbj_X17OLiYc_q6EaNVxdk",
  *  "style": "",
  *  "animation": "",
  *  "property": {
- *      "type": "heal",
+ *      "type": "HP",
  *      "value": 50
  *  },
  * }

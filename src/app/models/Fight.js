@@ -100,7 +100,7 @@ class Fight {
                         [typeEffect]: [value]
                     }
                     console.log(type, value, "timeline: ", operateEveryRoundStates[key].timeline)
-                    actorImmortality.currentlyStatus[type] -= -(value)
+                    actorImmortality.currentStatus[type] -= -(value)
 
                     operateEveryRoundStates[key].timeline -= 1
                     if (operateEveryRoundStates[key].timeline <= 0) {
@@ -111,7 +111,7 @@ class Fight {
                         effectPreStatus.push(effect)
                         delete operateEveryRoundStates[key]
                     }
-                    console.log('KQ: ', actorImmortality.currentlyStatus[type])
+                    console.log('KQ: ', actorImmortality.currentStatus[type])
 
                     effectPreStatus.push(effect)
                 })
@@ -122,7 +122,7 @@ class Fight {
                 Object.keys(mainImmortalitiesObject).length > 0 &&
                 Object.keys(enemyImmortalitiesObject).length > 0
             ) {
-                const currentlyStatus = {}
+                const currentStatus = {}
                 Object.keys(toKeepStatesAlive).forEach(key => {
                     // console.log("timeline: ", toKeepStatesAlive[key].timeline)
                     toKeepStatesAlive[key].timeline -= 1
@@ -138,15 +138,15 @@ class Fight {
                     } else {
                         // -20 => -(-(-20)) = +20, recover status (computed status)
                         const type = toKeepStatesAlive[key].property.type
-                        if (!currentlyStatus[type]) {
-                            currentlyStatus[type] = actorImmortality.status[type]
+                        if (!currentStatus[type]) {
+                            currentStatus[type] = actorImmortality.status[type]
                         }
-                        currentlyStatus[type] -= -toKeepStatesAlive[key].property.value
+                        currentStatus[type] -= -toKeepStatesAlive[key].property.value
                     }
                 })
 
-                Object.assign(actorImmortality.currentlyStatus, currentlyStatus)
-                console.log(whoAmI, ' ', actorImmortality.currentlyStatus)
+                Object.assign(actorImmortality.currentStatus, currentStatus)
+                console.log(whoAmI, ' ', actorImmortality.currentStatus)
             }
 
             roundHistory[whoAmI].effects = roundHistory[whoAmI].effects.concat(effectPreStatus)
@@ -162,12 +162,12 @@ class Fight {
             const consume = floor.consume
             // computed consume of skill
             consume.forEach(fee => {
-                const result = actorImmortality.currentlyStatus[fee.type] - (-fee.value)
+                const result = actorImmortality.currentStatus[fee.type] - (-fee.value)
                 if (result < 0) {
-                    actorImmortality.currentlyStatus[fee.type] = 0
+                    actorImmortality.currentStatus[fee.type] = 0
                 }
 
-                actorImmortality.currentlyStatus[fee.type] = result
+                actorImmortality.currentStatus[fee.type] = result
             })
 
             // pointer to activities
@@ -185,8 +185,8 @@ class Fight {
                 // console.log(activity.statesBonus)
 
                 const effect = {
-                    type: 'skill',
-                    name: skillKey,
+                    type: `skill-${activity.property.type}`,
+                    name: activity.effects.mainEffect.name,
                     objects: [],
                     [typeEffect]: []
                 }
@@ -401,7 +401,7 @@ class Fight {
             const consume = floor.consume
             // computed consume of skill
             for(let fee of consume) {
-                const result = actorImmortality.currentlyStatus[fee.type] - (-fee.value)
+                const result = actorImmortality.currentStatus[fee.type] - (-fee.value)
                 if (result < 0) return false
             }
             return true
@@ -413,14 +413,14 @@ class Fight {
 
     handleComputedDamage(who, targetImmortalityObject, targetImmortalitiesObject, effect, typeEffect, activity) {
         if (targetImmortalityObject) {
-            // console.log('-- name: ', activity.who, ' ', targetImmortalityObject.currentlyStatus.HP, 'type: ', activity.property.type)
-            targetImmortalityObject.currentlyStatus[activity.property.type] -= (-activity.property.value)
+            // console.log('-- name: ', activity.who, ' ', targetImmortalityObject.currentStatus.HP, 'type: ', activity.property.type)
+            targetImmortalityObject.currentStatus[activity.property.type] -= (-activity.property.value)
 
             // console.log('---- index: ', targetImmortalityObject.index, ', who: ', who, ', activityWho: ', this.whos[activity.who], ', kq: ', targetImmortalityObject.index * who * this.whos[activity.who])
             effect.objects.push(targetImmortalityObject.index * who * this.whos[activity.who])
             effect[typeEffect].push(activity.property.value)
 
-            if (targetImmortalityObject.currentlyStatus.HP <= 0) {
+            if (targetImmortalityObject.currentStatus.HP <= 0) {
                 delete targetImmortalitiesObject[targetImmortalityObject.index]
             }
         }
@@ -441,17 +441,17 @@ class Fight {
                 [typeEffect]: []
             }
             
-            targetImmortalityObject.currentlyStatus[state.property.type] -= (-state.property.value)
+            targetImmortalityObject.currentStatus[state.property.type] -= (-state.property.value)
 
-            if (targetImmortalityObject.currentlyStatus[state.property.type] < 0) {
-                targetImmortalityObject.currentlyStatus[state.property.type] = 0
+            if (targetImmortalityObject.currentStatus[state.property.type] < 0) {
+                targetImmortalityObject.currentStatus[state.property.type] = 0
             }
 
             effect.objects.push(targetImmortalityObject.index * who * this.whos[state.who])
             effect[typeEffect].push(state.property.value)
             effectStates.push(effect)
 
-            if (targetImmortalityObject.currentlyStatus.HP <= 0) {
+            if (targetImmortalityObject.currentStatus.HP <= 0) {
                 delete targetImmortalitiesObject[targetImmortalityObject.index]
             }
         }

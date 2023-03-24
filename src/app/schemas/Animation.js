@@ -8,7 +8,7 @@ const Figure = require('../models/Figure')
 const Animation = new Schema({
     sky: { type: String, default: '', },  // image
     figure: { type: ObjectId, ref: 'Figure' }, // image
-    effect: { type: ObjectId, ref: 'Effect' }, // effect
+    mainEffect: { type: ObjectId, ref: 'Effect' }, // effect
     delay: { type: Number, default: 1000, },
 })
 

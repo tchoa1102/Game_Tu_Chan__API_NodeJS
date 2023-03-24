@@ -148,6 +148,7 @@ class QuestController {
             status.you = collectImmortality(immortalitiesUser, players.you)
             status.defense = collectImmortality(immortalitiesUser, players.defense)
             const { newSkills, totalData: td } = collectSkills(skillsList)
+            console.log(newSkills)
             totalData += td
 
             // console.log('\n\n\nresult: ')
@@ -156,8 +157,8 @@ class QuestController {
             // console.log(skillsList['Hỏa Cầu'].floor.mainEffect)
             // console.log('StatesList: ', statesList) //done
             // console.log('Status: ', status) //done
-            console.log('mountLeftField: ', mountLeftField)
-            console.log('mountRightField: ', mountRightField)
+            // console.log('mountLeftField: ', mountLeftField)
+            // console.log('mountRightField: ', mountRightField)
             // console.log('Immortality User: ', immortalitiesUser)
             // console.log('Immortality Cluster: ', immortalitiesCluster)
             // console.log(plot, plot.length)
@@ -165,7 +166,7 @@ class QuestController {
             //     console.log(round)
             // })
             // plot.forEach((round, index) => console.log(index, round.you.effects, round.defense.effects, '\n'))
-            // console.log('\n\nThe End!')
+            console.log('\n\nThe End!')
             return res.json({
                 avatars,
                 skills: newSkills,
@@ -227,8 +228,8 @@ class QuestController {
                     avatar: immortality.avatar,
                     hp: immortality.status.HP,
                     mp: immortality.status.MP,
-                    currentHP: immortality.currentlyStatus.currentlyHP,
-                    currentMP: immortality.currentlyStatus.currentlyMP,
+                    currentHP: immortality.currentStatus.HP,
+                    currentMP: immortality.currentStatus.MP,
                     status: immortality.status,
                 }
                 newImmortalities[immortality.index] = newImmortality
@@ -240,23 +241,25 @@ class QuestController {
         function collectSkills(skills) {
             let totalData = 0
             const newSkills = Object.keys(skills).reduce((result, key) => {
-                if (!result[key]) {
-                    const newSkill = {
-                        name: key,
-                        amount: 5,
-                        style: skills[key].floor.mainEffect.effect.style,
-                        animation: skills[key].floor.mainEffect.effect.animation,
-                        startIs: skills[key].floor.startIs,
-                        delay: skills[key].floor.mainEffect.delay,
-                        effects: {
-                            sky: skills[key].floor.mainEffect.sky,
-                            figure: skills[key].floor.mainEffect.figure,
-                            action: skills[key].floor.mainEffect.effect.action,
+                skills[key].floor.activities.forEach(activity => {
+                    if (!result[activity.effects.mainEffect.name]) {
+                        const newSkill = {
+                            name: activity.effects.mainEffect.name,
+                            amount: 5,
+                            style: activity.effects.mainEffect.style,
+                            animation: activity.effects.mainEffect.animation,
+                            startIs: activity.effects.mainEffect.startIs,
+                            delay: activity.effects.delay,
+                            effects: {
+                                sky: activity.effects.sky,
+                                figure: activity.effects.figure,
+                                action: activity.effects.mainEffect.action,
+                            }
                         }
+                        result[activity.effects.mainEffect.name] = newSkill
+                        totalData += result[activity.effects.mainEffect.name].amount
                     }
-                    result[key] = newSkill
-                    totalData += result[key].amount
-                }
+                })
                 return result
             }, {})
 
@@ -279,8 +282,8 @@ class QuestController {
             Object.keys(immortality.status).forEach( property => {
                 immortality.status[property] *= increase
             })
-            Object.keys(immortality.currentlyStatus).forEach( property => {
-                immortality.currentlyStatus[property] *= increase
+            Object.keys(immortality.currentStatus).forEach( property => {
+                immortality.currentStatus[property] *= increase
             })
         }
 
@@ -293,10 +296,10 @@ class QuestController {
                         immortality.status[equip.equip.property.type] += increase
                         // immortality.status[equip.equip.property.type] += increase
                         if (equip.equip.property.type == 'HP') {
-                            immortality.currentlyStatus.currentlyHP += increase
+                            immortality.currentStatus.HP += increase
                         }
                         if (equip.equip.property.type == 'MP') {
-                            immortality.currentlyStatus.currentlyMP += increase
+                            immortality.currentStatus.MP += increase
                         }
                     }
                 })
@@ -308,7 +311,7 @@ class QuestController {
                 field[immortality.index] = {
                     isActor: false,
                     index: immortality.index,
-                    currentlyStatus: {...immortality.status},
+                    currentStatus: {...immortality.status},
                     status: {...immortality.status},
                     skills: {...immortality.skills},
                     operateEveryRoundStates: {}, // (key: value)
@@ -323,8 +326,8 @@ class QuestController {
                      */
                 }
 
-                field[immortality.index].currentlyStatus.HP = immortality.currentlyStatus.currentlyHP
-                field[immortality.index].currentlyStatus.MP = immortality.currentlyStatus.currentlyMP
+                field[immortality.index].currentStatus.HP = immortality.currentStatus.HP
+                field[immortality.index].currentStatus.MP = immortality.currentStatus.MP
             })
         }
 
@@ -336,7 +339,8 @@ class QuestController {
                 for(let key in e.skills) {
                     const skill = await Skill.findOne({name: key}).populate({ path: 'floors.activities.operateEveryRoundStates.effect' })
                                                                 .populate({ path: 'floors.activities.toKeepStatesAlive.effect' })
-                                                                .populate({ path: 'floors.mainEffect.effect' })
+                                                                .populate({ path: 'floors.activities.effects.mainEffect' })
+                                                                // .populate({ path: 'floors.mainEffect.effect' })
                     e.skills[key].description = skill.description
                     e.skills[key].floor = skill.floors.find((floor) => floor.name == e.skills[key].floor)
                 }

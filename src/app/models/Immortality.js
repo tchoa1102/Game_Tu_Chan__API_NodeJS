@@ -14,9 +14,9 @@ const Immortality = new Schema({
     },},
     avatar: { type: String, default: 'monk' },
 
-    currentlyStatus: { type: Object, default: {
-        currentlyHP: { type: Number, default: 100, },
-        currentlyMP: { type: Number, default: 100, },
+    currentStatus: { type: Object, default: {
+        HP: { type: Number, default: 100, },
+        MP: { type: Number, default: 100, },
     } },
 
     status: { type: Object, default: {

@@ -8,6 +8,7 @@ const Effect = new Schema({
     style: { type: String, default: '', },
     animation: { type: String, default: '', },
     image: { type: String, default: '1-4lQCe52JJ0UHxzkzkIB6BWAGYTJmJu1' },
+    startIs: { type: String, default: 'you', required: true, } // you/object
 })
 
 module.exports = mongoose.model('Effect', Effect)
