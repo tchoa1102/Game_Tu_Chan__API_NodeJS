@@ -80,7 +80,7 @@ class QuestController {
         try {
             const idUser = '117658907214625686230111' || req.session.passport.user._id
 
-            const { whos, players, levels, typeOfActivity, typeOfTarget } = await Setup.findOne().lean()
+            const { whos, players, levels, typeOfActivity, typeOfTarget, locationSkill } = await Setup.findOne().lean()
             // console.log(levels, typeOfActivity, typeOfTarget)
 
             // user
@@ -175,6 +175,7 @@ class QuestController {
                 plot,
                 resultFight: result.resultFight,
                 totalData,
+                locationSkill,
             })
         } catch (error) {
             return next(error)
@@ -249,12 +250,13 @@ class QuestController {
                             style: activity.effects.mainEffect.style,
                             animation: activity.effects.mainEffect.animation,
                             startIs: activity.effects.mainEffect.startIs,
-                            delay: activity.effects.delay,
+                            location: activity.effects.mainEffect.location,
                             effects: {
                                 sky: activity.effects.sky,
                                 figure: activity.effects.figure,
                                 action: activity.effects.mainEffect.action,
-                            }
+                            },
+                            delay: activity.effects.delay,
                         }
                         result[activity.effects.mainEffect.name] = newSkill
                         totalData += result[activity.effects.mainEffect.name].amount

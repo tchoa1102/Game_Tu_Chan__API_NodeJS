@@ -161,13 +161,20 @@ class Fight {
             const floor = actorImmortality.skills[skillKey].floor
             const consume = floor.consume
             // computed consume of skill
+            roundHistory[whoAmI].consumes = []
             consume.forEach(fee => {
                 const result = actorImmortality.currentStatus[fee.type] - (-fee.value)
+                const consume = {
+                    type: fee.type,
+                    value: 0,
+                }
                 if (result < 0) {
                     actorImmortality.currentStatus[fee.type] = 0
                 }
 
+                consume.value = -(actorImmortality.currentStatus[fee.type] - result) // do có < 0
                 actorImmortality.currentStatus[fee.type] = result
+                roundHistory[whoAmI].consumes.push(consume)
             })
 
             // pointer to activities
