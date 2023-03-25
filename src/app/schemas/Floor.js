@@ -18,6 +18,7 @@ const Floor = new Schema({
     consume: { type: Array, default: [] }, // [{hp: }, {mp: }, ...]
     activities: [{
         who: { type: String, default: 'enemy' }, // you / enemy
+        type: { type: String, default: 'INT' }, // công vật lý hay công phép?
         typeOfTarget: { type: String, default: 'single', }, // row? col? ...
         typeOfActivity: { type: String, default: 'first', }, // first / middle / last
         property: { type: Property, default: () => ({}),}, // property for the skills
