@@ -148,7 +148,7 @@ class QuestController {
             status.you = collectImmortality(immortalitiesUser, players.you)
             status.defense = collectImmortality(immortalitiesUser, players.defense)
             const { newSkills, totalData: td } = collectSkills(skillsList)
-            console.log(newSkills)
+            // console.log(newSkills)
             totalData += td
 
             // console.log('\n\n\nresult: ')
@@ -226,6 +226,7 @@ class QuestController {
             immortalities.forEach(immortality => {
                 const newImmortality = {
                     index: immortality.index * who,
+                    name: immortality.name,
                     avatar: immortality.avatar,
                     hp: immortality.status.HP,
                     mp: immortality.status.MP,

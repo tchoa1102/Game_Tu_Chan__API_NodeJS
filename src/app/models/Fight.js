@@ -31,7 +31,8 @@ class Fight {
                 this.round < this.maxRound;
             this.round ++
         ) {
-            console.log(Object.keys(this.mountLeftField).length, Object.keys(this.mountRightField).length, Object.keys(this.mountLeftField).length > 0 && Object.keys(this.mountRightField).length > 0)
+            // console.log("round: ", this.round, ' ', Object.keys(this.mountLeftField).length, Object.keys(this.mountRightField).length, Object.keys(this.mountLeftField).length > 0 && Object.keys(this.mountRightField).length > 0)
+            console.log("round: ", this.round, ' ', this.mountRightField)
             const roundHistory = {
                 you: {},
                 defense: {},
@@ -99,7 +100,7 @@ class Fight {
                         type: t,
                         [typeEffect]: [value]
                     }
-                    console.log(type, value, "timeline: ", operateEveryRoundStates[key].timeline)
+                    // console.log(type, value, "timeline: ", operateEveryRoundStates[key].timeline)
                     actorImmortality.currentStatus[type] -= -(value)
 
                     operateEveryRoundStates[key].timeline -= 1
@@ -111,7 +112,7 @@ class Fight {
                         effectPreStatus.push(effect)
                         delete operateEveryRoundStates[key]
                     }
-                    console.log('KQ: ', actorImmortality.currentStatus[type])
+                    // console.log('KQ: ', actorImmortality.currentStatus[type])
 
                     effectPreStatus.push(effect)
                 })
@@ -146,7 +147,7 @@ class Fight {
                 })
 
                 Object.assign(actorImmortality.currentStatus, currentStatus)
-                console.log(whoAmI, ' ', actorImmortality.currentStatus)
+                // console.log(whoAmI, ' ', actorImmortality.currentStatus)
             }
 
             roundHistory[whoAmI].effects = roundHistory[whoAmI].effects.concat(effectPreStatus)
@@ -399,9 +400,10 @@ class Fight {
     }
 
     findTypeActivity(activity) {
-        console.log(activity)
+        // console.log(activity)
         // if ()
-        const mainType = activity.type // ATK/INT
+        const mainType = activity.type // mainType: ATK/INT/HP/MP/...; secondType: ATK/INT
+        console.log(mainType)
         if (mainType == 'ATK') return { mainType, secondType: 'INT' }
         return { mainType, secondType: 'ATK' }
     }
@@ -416,17 +418,29 @@ class Fight {
 
     handleComputedDamage(who, mainImmortality, targetImmortalityObject, targetImmortalitiesObject, effect, typeEffect, activity) {
         if (targetImmortalityObject) {
-            console.log(activity)
+            // console.log(activity)
             const { mainType, secondType } = this.findTypeActivity(activity)
             // console.log('-- name: ', activity.who, ' ', targetImmortalityObject.currentStatus.HP, 'type: ', activity.property.type)
             let damage = -(-activity.property.value)
-            if (damage < 0) damage += 
-                            - mainImmortality.currentStatus[mainType]
-                            - Math.floor(mainImmortality.currentStatus[secondType] * Math.random())
+            if (damage < 0) {
+                damage += 
+                    - mainImmortality.currentStatus[mainType] // increase damage
+                    - Math.floor(mainImmortality.currentStatus[secondType] * Math.random()) // increase damage
+                if (mainImmortality.currentStatus.ACC < targetImmortalityObject.currentStatus.AGI) {
+                    damage += - (mainImmortality.currentStatus.ACC / targetImmortalityObject.currentStatus.AGI) * damage
+                }
+                if (Math.abs(damage) > Math.abs(targetImmortalityObject.currentStatus.DEF)) {
+                    damage += - (- targetImmortalityObject.currentStatus.DEF) // decrease damage
+                } else damage = -1
+            }
             else damage += 
                 + mainImmortality.currentStatus[mainType]
                 + Math.floor(mainImmortality.currentStatus[secondType] * Math.random())
             targetImmortalityObject.currentStatus[activity.property.type] -= -damage
+
+            if (targetImmortalityObject.currentStatus[activity.property.type] > targetImmortalityObject.status[activity.property.type]) {
+                targetImmortalityObject.currentStatus[activity.property.type] = targetImmortalityObject.status[activity.property.type]
+            }
 
             // console.log('---- index: ', targetImmortalityObject.index, ', who: ', who, ', activityWho: ', this.whos[activity.who], ', kq: ', targetImmortalityObject.index * who * this.whos[activity.who])
             effect.objects.push(targetImmortalityObject.index * who * this.whos[activity.who])

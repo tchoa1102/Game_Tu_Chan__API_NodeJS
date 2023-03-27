@@ -17,7 +17,7 @@ const Immortality = new Schema({
     currentStatus: { type: Object, default: {
         HP: { type: Number, default: 100, },
         MP: { type: Number, default: 100, },
-    } },
+    },},
 
     status: { type: Object, default: {
         HP: { type: Number, default: 100, },
@@ -28,7 +28,7 @@ const Immortality = new Schema({
         DEF: { type: Number, default: 100, }, // defense
         ACC: { type: Number, default: 1, }, // Accuracy, độ chính xác => cường độ thần thức
         AGI: { type: Number, default: 1, }, // Agility ~= Speed => thân pháp
-    }},
+    },},
 
     // equipments: {
     //     auxiliaries: [],
