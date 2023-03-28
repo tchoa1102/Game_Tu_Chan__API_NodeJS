@@ -15,6 +15,7 @@ class ImmortalityController {
                 for(let key in e.skills) {
                     const skill = await Skill.findOne({name: key})
                     e.skills[key].description = skill.description
+                    e.skills[key].image = skill.image
                     e.skills[key].floor = skill.floors.find((floor) => floor.name == e.skills[key].floor)
                 }
             }

@@ -34,16 +34,14 @@ const Immortality = new Schema({
     //     auxiliaries: [],
     //     attacks: [],
     // },
-
-    skills: { type: Object, }
+    skills: { type: Object, },
     /**
      * "skill name": {
-     *      type: ObjectId,
-            ref: 'Skill',
             floor: { type: String, }, // currently floor
-            exp: { type: Number, } // how long have you been training? (%)
+            exp: { type: Number, } // how long have you been training? (s)
         }
      */
+    trainingSkill: { type: String, default: '', }, // skill's name is training.
 })
 
 module.exports = mongoose.model('Immortality', Immortality)
