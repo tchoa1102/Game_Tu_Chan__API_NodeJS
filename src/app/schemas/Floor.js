@@ -8,14 +8,17 @@ const Property = require('./Property')
 
 const Floor = new Schema({
     name: { type: String, required: true, unique: true },
-    costs: { type: Array, default: [], }, // Phí mua
-    
+    costs: [{
+        item: { type: ObjectId, ref: 'Item' },
+        quantity: {  type: Number, },
+    }], // Phí tăng tốc tu luyện
+
     newLevel: { type: Object, default: {} }, // {name: '', level: ''}
     trainedTime: { type: Number, default: 0},
-    requirements: { type: Array, default: [], }, // required resources to train
+    requirements: { type: Array, default: [], }, // required resources to train { type: , value: }
     
     typeOfChant: { type: String, default: 'chanting', },
-    consume: { type: Array, default: [] }, // [{hp: }, {mp: }, ...]
+    consume: { type: Array, default: [] }, // [{type: hp, value: }, { type: mp, value }, ...]
     activities: [{
         who: { type: String, default: 'enemy' }, // you / enemy
         type: { type: String, default: 'INT' }, // công vật lý hay công phép?

@@ -3,7 +3,7 @@ const Schema = mongoose.Schema
 
 const Item = new Schema({
     name: { type: String, },
-    value: { type: Number, },
+    value: { type: String, },
     description: { type: String, },
 })
 

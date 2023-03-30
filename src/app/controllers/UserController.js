@@ -1,4 +1,4 @@
-const { User, } = require('../models')
+const { User, Skill } = require('../models')
 
 class UserController {
     // [GET] /api/users/whoami
@@ -8,7 +8,7 @@ class UserController {
             // console.log("Auth", req.session.passport.user.emails)
             if (req.session.passport?.user) {
                 console.log('json')
-                let user = await User.findOne({ _id: req.session.passport.user._id }).populate({
+                const user = await User.findOne({ _id: req.session.passport.user._id }).populate({
                     path: 'bag.items',
                     populate: {
                         path: 'item',
@@ -20,10 +20,6 @@ class UserController {
                             path: 'skill'
                         }
                     })
-
-                // for(const e of user.bag.items) {
-                //     e.item.populate('item')
-                // }
 
                 return res.json(user)
             } else return res.status(400).json({
