@@ -1,4 +1,4 @@
-const { User, Skill } = require('../models')
+const { User, Skill, Immortality } = require('../models')
 
 class UserController {
     // [GET] /api/users/whoami
@@ -27,6 +27,21 @@ class UserController {
             })
         } catch (error) {
             next(error)
+        }
+    }
+
+    // [PATCH] /api/users/:idUser/embattle
+    async embattle(req, res, next) {
+        try {
+            const body = req.body
+            const idImmortality = body.idImmortality
+            const index = body.index
+            const immortality = await Immortality.findById(idImmortality)
+            immortality.index = index
+            await immortality.save()
+            return res.json(immortality)
+        } catch (error) {
+            return next(error)
         }
     }
 }

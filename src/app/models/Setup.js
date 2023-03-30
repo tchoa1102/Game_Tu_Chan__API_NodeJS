@@ -10,6 +10,7 @@ const Setup = new Schema({
     startIs: { type: Object, default: {}, },
     players: { type: Object, default: {}, },
     locationSkill: { type: Object, default: {}, },
+    immortalitiesName: { type: Array, default: [] },
 })
 
 module.exports = mongoose.model('Setup', Setup)

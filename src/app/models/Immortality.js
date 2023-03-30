@@ -5,9 +5,9 @@ const ObjectId = mongoose.ObjectId
 const Skill = require('./Skill')
 
 const Immortality = new Schema({
-    user: { type: ObjectId, },
+    user: { type: ObjectId, default: undefined, },
     name: { type: String, },
-    index: { type: Number, },
+    index: { type: Number, default: -1, },
     level: { type: Object, default: {
         name: 'Luyện Khí kì',
         level: 'Tầng 1',
@@ -34,7 +34,7 @@ const Immortality = new Schema({
     //     auxiliaries: [],
     //     attacks: [],
     // },
-    skills: { type: Object, },
+    skills: { type: Object, default: {}, },
     /**
      * "skill name": {
             floor: { type: String, }, // currently floor

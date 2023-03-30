@@ -1,4 +1,7 @@
-const { Immortality, User, Avatar, Skill, } = require('../models')
+const mongoose = require('mongoose')
+const ObjectId = mongoose.Types.ObjectId
+
+const { Immortality, User, Avatar, Skill, Setup } = require('../models')
 
 class ImmortalityController {
     // [GET] /api/users/:id/immortalities
@@ -26,8 +29,42 @@ class ImmortalityController {
         }
     }
 
-    // [POST] /api/users/:id/immortalities/create
+    // [POST] /api/immortalities/save
     async create(req, res, next) {
+        try {
+            const body = req.body
+            const newImmortality = {
+                name: '',
+                currentStatus: {},
+                status: {},
+            }
+
+            const { immortalitiesName, } = await Setup.findOne({}).lean()
+            const index = getRandom(immortalitiesName.length)
+            newImmortality.status.HP = getRandom(500) + 1000
+            newImmortality.status.MP = getRandom(500) + 1000
+            newImmortality.status.ATK = getRandom(50) + 50
+            newImmortality.status.INT = getRandom(50) + 50
+            newImmortality.status.DEF = getRandom(50) + 50
+            newImmortality.status.ACC = getRandom(50) + 50
+            newImmortality.status.AGI = getRandom(50) + 50
+            newImmortality.name = immortalitiesName[index]
+            newImmortality.currentStatus = new Object(newImmortality.status)
+
+            const immortality = new Immortality(newImmortality)
+            await immortality.save()
+
+            return res.json(immortality)
+            function getRandom(max) {
+                return Math.floor(Math.random() * max)
+            }
+        } catch (error) {
+            return next(error)
+        }
+    }
+
+    // [POST] /api/users/:id/immortalities/create
+    async createTest(req, res, next) {
         const data = req.body
 
         try {
@@ -35,6 +72,21 @@ class ImmortalityController {
             const result = await immortality.save()
 
             return res.json(result)
+        } catch (error) {
+            return next(error)
+        }
+    }
+
+    // [PATCH] /api/users/:idUser/immortalities/:idImmortality/enlist
+    async enlist(req, res, next) {
+        try {
+            const idUser = req.params.idUser
+            const idImmortality = req.params.idImmortality
+            const immortality = await Immortality.findById(idImmortality)
+            immortality.user = new ObjectId(idUser)
+            await immortality.save()
+
+            return res.json({ message: 'Thành Công' })
         } catch (error) {
             return next(error)
         }
