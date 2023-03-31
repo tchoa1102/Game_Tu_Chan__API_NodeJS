@@ -34,10 +34,38 @@ class UserController {
     async embattle(req, res, next) {
         try {
             const body = req.body
+            const idUser = req.params.idUser
             const idImmortality = body.idImmortality
             const index = body.index
+            const user = await User.findById(idUser)
             const immortality = await Immortality.findById(idImmortality)
-            immortality.index = index
+            const strategy = user.strategy
+            // location on strategy is exists
+            if ( !! strategy[index] ) {
+                if (strategy[index] != immortality._id) {
+                    // immortality was embattled
+                    if ( !!immortality.index ) {
+                        const lastImmortality = await Immortality.findById(strategy[index])
+                        // index == lastImmortality.index => true
+                        console.log(strategy[index], strategy[immortality.index])
+                        strategy[index] = immortality._id
+                        strategy[immortality.index] = lastImmortality._id
+
+                        console.log(index, lastImmortality.index, immortality.index)
+                        lastImmortality.index = immortality.index
+                        immortality.index = index
+                        console.log(index, lastImmortality.index, immortality.index)
+                        console.log('Swap')
+
+                        await lastImmortality.save()
+                    }
+                }
+            } else {
+                console.log('Xuất trận')
+                strategy[index] = immortality._id
+                immortality.index = index
+            }
+            await user.save()
             await immortality.save()
             return res.json(immortality)
         } catch (error) {

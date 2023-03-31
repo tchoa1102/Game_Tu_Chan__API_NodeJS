@@ -12,4 +12,8 @@ router.post('/:id/immortalities/create', ImmortalityController.createTest)
 router.patch('/:idUser/embattle', UserController.embattle)
 router.patch('/:idUser/immortalities/:idImmortality/enlist', ImmortalityController.enlist)
 router.patch('/:idUser/immortalities/:idImmortality/training/:skillName/increaseSpeed', ImmortalityController.increaseSpeed)
+
+// [DELETE]
+router.delete('/:idUser/immortalities/:idImmortality', ImmortalityController.delete)
+
 module.exports = router

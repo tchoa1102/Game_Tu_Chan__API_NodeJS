@@ -51,10 +51,10 @@ class ImmortalityController {
             newImmortality.name = immortalitiesName[index]
             newImmortality.currentStatus = new Object(newImmortality.status)
 
-            const immortality = new Immortality(newImmortality)
-            await immortality.save()
+            const userSession = req.session.passport.user
+            userSession.newImmortality = newImmortality
 
-            return res.json(immortality)
+            return res.json(newImmortality)
             function getRandom(max) {
                 return Math.floor(Math.random() * max)
             }
@@ -82,9 +82,14 @@ class ImmortalityController {
         try {
             const idUser = req.params.idUser
             const idImmortality = req.params.idImmortality
-            const immortality = await Immortality.findById(idImmortality)
-            immortality.user = new ObjectId(idUser)
+            const newImmortality = req.session.passport.user.newImmortality
+            newImmortality.user = new ObjectId(idUser)
+            // const immortality = await Immortality.findById(idImmortality)
+            // immortality.user = new ObjectId(idUser)
+            const immortality = new Immortality(newImmortality)
             await immortality.save()
+
+            delete req.session.passport.user.newImmortality
 
             return res.json({ message: 'Thành Công' })
         } catch (error) {
@@ -156,6 +161,19 @@ class ImmortalityController {
                     }
                 }
             }
+
+            return res.json({ message: 'Thành Công' })
+        } catch (error) {
+            return next(error)
+        }
+    }
+
+    // [DELETE] /api/users/:idUser/immortalities/:idImmortality
+    async delete(req, res, next) {
+        try {
+            const idUser = req.params.idUser
+            const idImmortality = req.params.idImmortality
+            const immortality = await Immortality.deleteOne({ _id: idImmortality })
 
             return res.json({ message: 'Thành Công' })
         } catch (error) {
