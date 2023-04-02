@@ -125,8 +125,6 @@ class QuestController {
                 quests = quests.concat(newQuest)
             }
 
-            console.log(`quests: ${quests}`)
-
             return res.json(quests)
         } catch (error) {
             return next(error)
