@@ -1,13 +1,15 @@
 
 class Fight {
-    constructor(whos, players, mountLeftField, mountRightField, typeOfActivity, typeOfTarget) {
+    constructor(whos, players, mountLeftField, mountRightField, typeOfActivity, typeOfTarget, stateFight) {
         this.round = 0
         this.maxRound = 31
         // [col][row]
         this.field = [[1,2,3], [4,5,6], [7,8,9]]
         // this.leftField = [[1,2,3], [4,5,6], [7,8,9]] // ([[7,8,9], [4,5,6], [1,2,3]]) -> when screen
         // this.rightField = [[1,2,3], [4,5,6], [7,8,9]]
-        this.resultFight = 'Thắng Lợi'
+
+        this.stateFight = stateFight
+        this.resultFight = this.stateFight.win
         this.actorFlagYou = true
         this.actorFlagDefense = true
         this.skillsList= {}
@@ -52,9 +54,9 @@ class Fight {
         }
 
         if (this.round >= this.maxRound || Object.keys(this.mountRightField).length > 0) {
-            this.resultFight = 'Thất Bại'
+            this.resultFight = this.stateFight.defense
         } else if (Object.keys(this.mountLeftField).length == 0 && Object.keys(this.mountRightField).length == 0) {
-            this.resultFight = 'Hòa'
+            this.resultFight = this.stateFight.draw
         }
 
         return {

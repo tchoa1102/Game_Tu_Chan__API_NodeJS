@@ -114,14 +114,62 @@ class QuestController {
 
             let skillsList = {}
             let statesList = []
+            const stateFight = {
+                win: 'Thắng Lợi',
+                defense: 'Thất Bại',
+                draw: 'Hòa'
+            }
 
             // action
-            const result = new Fight(whos, players, mountLeftField, mountRightField, typeOfActivity, typeOfTarget)
+            const result = new Fight(whos, players, mountLeftField, mountRightField, typeOfActivity, typeOfTarget, stateFight)
                                 .run()
 
             const plot = [...result.plot]
             skillsList = new Object(result.skillsList)
             statesList = [...result.statesList]
+
+            const resultFight = result.resultFight
+            if (resultFight == stateFight.win) {
+                const currentQuestName = quest.name
+                const clusterNameIsAttack = cluster.name
+
+                const nextClusters = user.quests[currentQuestName].next
+                const isNextCluster =
+                    Object.keys(nextClusters).some(clusterKey => {
+                        if (nextClusters[clusterKey] == clusterNameIsAttack) {
+                            delete nextClusters[clusterKey]
+                            return true
+                        }
+                        return false
+                    })
+
+                if (isNextCluster) {
+                    // filter return array next cluster
+                    const newNextClusters = quest.clusters.filter(cluster => cluster.front == clusterNameIsAttack)
+                    if (newNextClusters.length > 0) {
+                        newNextClusters.forEach(newNextCluster => {
+                            const newNextClusterName = newNextCluster.name
+                            nextClusters[newNextClusterName] = newNextClusterName
+                        })
+                    } else {
+                        // (isNextCluster && nextCluster.length < 0) => next Quest
+                        const newQuest = await Quest.find({front: currentQuestName})
+                        if (newQuest) {
+                            const nextClusterOfNewQuests = newQuest.clusters.filter(cluster => cluster.front == '')
+                            user.quests[newQuest.name] = {
+                                current: {},
+                                next: {},
+                                isNext: false,
+                            }
+    
+                            nextClusterOfNewQuests.forEach(newCluster => {
+                                const newNextClusterName = newCluster.name
+                                user.quests[newQuest.name].next[newNextClusterName] = newNextClusterName
+                            })
+                        }
+                    }
+                }
+            }
 
             // Covert stateList
             const states = statesList.reduce((result, state) => {
@@ -173,7 +221,7 @@ class QuestController {
                 states,
                 status,
                 plot,
-                resultFight: result.resultFight,
+                resultFight,
                 totalData,
                 locationSkill,
             })

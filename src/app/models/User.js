@@ -43,7 +43,25 @@ const User = new Schema({
             durability: { type: Number, required: true, default: 100, }, // <= 0 -> destroy
         }],
     },
-    quests: { type: Object, }, // history excursion
+    quests: { type: Object, default: {
+        'Ngọa Long Sơn': {
+            current: {},
+            next: {
+                'Thảo Khấu 1': 'Thảo Khấu 1',
+            },
+            isNext: false,
+        }
+    },}, // history excursion
+    /**
+     * quest: {
+     *  <clusters's Name>: {
+     *      current: { <cluster's name>: <cluster's name>, ... },
+     *      next: { <cluster's name>: <cluster's name>, ... },
+     *      isNext: true/false,
+     *  },
+     *  ...
+     * }
+     */
     strategy: {
         1: { type: String, default: '', },
         2: { type: String, default: '', },
