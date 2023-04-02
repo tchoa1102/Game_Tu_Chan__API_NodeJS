@@ -90,7 +90,7 @@ class QuestController {
     }
 
     // [GET] /api/users/:id/quests
-    async getAllQuests() {
+    async getAllQuests(req, res, next) {
         try {
             const idUser = req.params.id
             const user = await User.findById(idUser)
@@ -124,6 +124,8 @@ class QuestController {
 
                 quests = quests.concat(newQuest)
             }
+
+            console.log(`quests: ${quests}`)
 
             return res.json(quests)
         } catch (error) {
