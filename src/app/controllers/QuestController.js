@@ -5,7 +5,7 @@ const { Quest, Immortality, Setup, User, Skill, Avatar, Fight } = require('../mo
 
 class QuestController {
     // [GET] /api/quests
-    async get(req, res, next) {
+    async getAll(req, res, next) {
         try {
             const quest = await Quest.find({}, '_id name front')
 
@@ -16,13 +16,15 @@ class QuestController {
     }
 
     // [GET] /api/quests/:id
-    async getQuest(req, res, next) {
-        const id = req.params.id
+    async get(req, res, next) {
+        const idUser = req.session.passport.user._id
+        const idQuest = req.params.id
 
         try {
             const { levels } = await Setup.findOne().lean()
+            const user = await User.findById(idUser)
 
-            const result = await Quest.findById(id).populate({
+            const result = await Quest.findById(idQuest).populate({
                 path: 'clusters.immortalities',
             }).populate({
                 path: 'clusters.awards.items',
@@ -35,18 +37,33 @@ class QuestController {
                 populate: { path: 'equipment', },
             }).lean()
 
-            result.clusters.forEach(cluster => {
-                const largestImmortality = cluster.immortalities.reduce((largest, e) => {
-                    // find largest level
-                    largest = {...findLargestLevel(levels, largest, e)}
+            let historyForQuest = {}
+            // this quest is not clear
+            if ( !user.quests[result.name].isNext ) {
+                const current = user.quests[result.name].current
+                const next = user.quests[result.name].next
 
-                    return largest
-                }, new Object(cluster.immortalities[0]))
+                Object.assign(historyForQuest, current, next)
+            }
 
-                cluster.maxLevel = largestImmortality.level ? {...largestImmortality.level} 
-                                    : {name: 'Luyện Khí Kì', level: 'Tầng 1'}
+            const clusters = result.clusters.filter(cluster => {
+                // cluster that user won and next cluster
+                if ( historyForQuest[cluster.name] ) {
+                    const largestImmortality = cluster.immortalities.reduce((largest, e) => {
+                        // find largest level
+                        largest = {...findLargestLevel(levels, largest, e)}
+    
+                        return largest
+                    }, new Object(cluster.immortalities[0]))
+    
+                    cluster.maxLevel = largestImmortality.level ? {...largestImmortality.level} 
+                                        : {name: 'Luyện Khí Kì', level: 'Tầng 1'}
+
+                    return true
+                }
+                return false
             })
-
+            result.clusters = clusters
             return res.json(result)
         } catch (error) {
             return next(error)
@@ -69,6 +86,48 @@ class QuestController {
             }
     
             return largest
+        }
+    }
+
+    // [GET] /api/users/:id/quests
+    async getAllQuests() {
+        try {
+            const idUser = req.params.id
+            const user = await User.findById(idUser)
+
+            let aNumberOfIsNextQuestTrue = 0
+            const questsName = Object.keys(user.quests).reduce((total, questKey) => {
+                if (user.quests[questKey].isNext) {
+                    aNumberOfIsNextQuestTrue += 1
+                }
+                total.push(questKey)
+                return total
+            }, [])
+
+            let quests = await Quest.find({name: { $in: questsName }})
+
+            // When have new quest is updated by me
+            if (aNumberOfIsNextQuestTrue == Object.keys(user.quests).length) {
+                const firstQuest = quests.find(quest => quest.front == '')
+                let lastQuest = firstQuest
+                let currentTotalQuests = 1
+                while(currentTotalQuests < Object.keys(user.quests).length) {
+                    for(let quest of quests) {
+                        if (quest.front == lastQuest.name) {
+                            lastQuest = quest
+                            currentTotalQuests += 1
+                        }
+                    }
+                }
+
+                const newQuest = await Quest.findOne({ front: lastQuest.name })
+
+                quests = quests.concat(newQuest)
+            }
+
+            return res.json(quests)
+        } catch (error) {
+            return next(error)
         }
     }
 
@@ -133,7 +192,12 @@ class QuestController {
                 const currentQuestName = quest.name
                 const clusterNameIsAttack = cluster.name
 
+                const currentCluster = user.quests[currentQuestName].current
+                currentCluster[clusterNameIsAttack] = clusterNameIsAttack
+
+                // list cluster user will have to attack
                 const nextClusters = user.quests[currentQuestName].next
+                // inspect cluster attacked have on next clusters
                 const isNextCluster =
                     Object.keys(nextClusters).some(clusterKey => {
                         if (nextClusters[clusterKey] == clusterNameIsAttack) {
@@ -143,31 +207,39 @@ class QuestController {
                         return false
                     })
 
+                console.log(isNextCluster)
                 if (isNextCluster) {
+                    console.log('Next cluster')
                     // filter return array next cluster
                     const newNextClusters = quest.clusters.filter(cluster => cluster.front == clusterNameIsAttack)
-                    if (newNextClusters.length > 0) {
+                    if (newNextClusters && newNextClusters.length > 0) {
                         newNextClusters.forEach(newNextCluster => {
                             const newNextClusterName = newNextCluster.name
                             nextClusters[newNextClusterName] = newNextClusterName
                         })
                     } else {
                         // (isNextCluster && nextCluster.length < 0) => next Quest
-                        const newQuest = await Quest.find({front: currentQuestName})
-                        if (newQuest) {
-                            const nextClusterOfNewQuests = newQuest.clusters.filter(cluster => cluster.front == '')
-                            user.quests[newQuest.name] = {
-                                current: {},
-                                next: {},
-                                isNext: false,
-                            }
-    
-                            nextClusterOfNewQuests.forEach(newCluster => {
-                                const newNextClusterName = newCluster.name
-                                user.quests[newQuest.name].next[newNextClusterName] = newNextClusterName
+                        console.log('Next quest')
+                        user.quests[currentQuestName].isNext = true
+                        const newQuests = await Quest.find({front: currentQuestName})
+                        if (newQuests.length > 0) {
+                            newQuests.forEach(newQuest => {
+                                const nextClusterOfNewQuests = newQuest.clusters.filter(cluster => cluster.front == '')
+                                user.quests[newQuest.name] = {
+                                    current: {},
+                                    next: {},
+                                    isNext: false,
+                                }
+        
+                                nextClusterOfNewQuests.forEach(newCluster => {
+                                    const newNextClusterName = newCluster.name
+                                    user.quests[newQuest.name].next[newNextClusterName] = newNextClusterName
+                                })
                             })
                         }
                     }
+                    console.log(user.quests)
+                    await User.updateOne({ _id: user._id }, { quests: user.quests })
                 }
             }
 

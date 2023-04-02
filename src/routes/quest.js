@@ -6,9 +6,9 @@ const { QuestController, } = require('../app/controllers')
 // [GET] /api/quests/:idQuest/clusters/:idCluster/fight
 router.get('/:idQuest/clusters/:idCluster/fight', QuestController.fight)
 // [GET] /api/quests/:id
-router.get('/:id', QuestController.getQuest)
+router.get('/:id', QuestController.get)
 // [GET] /api/quests
-router.get('/', QuestController.get)
+router.get('/', QuestController.getAll)
 
 // [POST] /api/quests/:id/clusters
 router.post('/:id/clusters', QuestController.createCluster)
