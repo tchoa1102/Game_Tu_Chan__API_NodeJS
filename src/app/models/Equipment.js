@@ -6,6 +6,7 @@ const Property = require('../schemas/Property')
 const Equipment = new Schema({
     name: { type: String, required: true },
     type: { type: String, required: true, default: 'auxiliary' },
+    image: { type: String, default: '1cVyje43yyO-CSbhSo5eohATJo77ymID4' },
     // weapon (sword / stick / ... to attack) / auxiliary
     property: { type: Property, default:(() => {}) },
     level: { type: Object, required: true, default: {name: 'Luyện Khí Kì', level: 'Tầng 1'} },

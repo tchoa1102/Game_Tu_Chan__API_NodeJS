@@ -8,13 +8,20 @@ class UserController {
             // console.log("Auth", req.session.passport.user.emails)
             if (req.session.passport?.user) {
                 console.log('json')
-                const user = await User.findOne({ _id: req.session.passport.user._id }).populate({
-                    path: 'bag.items',
-                    populate: {
-                        path: 'item',
-                    }
-                }).populate(
-                    {
+                const user = await User.findOne({ _id: req.session.passport.user._id })
+                    .populate({
+                        path: 'bag.items',
+                        populate: {
+                            path: 'item',
+                        }
+                    })
+                    .populate({
+                        path: 'bag.equipments',
+                        populate: {
+                            path: 'equip'
+                        }
+                    })
+                    .populate({
                         path: 'bag.skills',
                         populate: {
                             path: 'skill'
