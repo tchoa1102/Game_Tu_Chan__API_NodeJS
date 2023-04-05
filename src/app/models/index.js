@@ -11,6 +11,7 @@ const Skill = require('./Skill')
 const User = require('./User')
 const Effect = require('./Effect')
 const Fight = require('./Fight')
+const Market = require('./Market')
 
 module.exports = {
     Avatar,
@@ -26,4 +27,5 @@ module.exports = {
     User,
     Effect,
     Fight,
+    Market,
 }

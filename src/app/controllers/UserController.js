@@ -1,3 +1,5 @@
+const mongoose = require('mongoose')
+const ObjectId = mongoose.Types.ObjectId
 const { User, Skill, Immortality } = require('../models')
 
 class UserController {
@@ -75,6 +77,60 @@ class UserController {
             await user.save()
             await immortality.save()
             return res.json(immortality)
+        } catch (error) {
+            return next(error)
+        }
+    }
+
+    // [PATCH] /api/users/:idUser/equipments/remove
+    async removeEquip(req, res, next) {
+        try {
+            const idUser = req.params.idUser
+            const idEquipment = req.body.idEquipment
+            const user = await User.findById(idUser).populate({ path: 'bag.equipments.equip' })
+            const equipments = user.bag.equipments
+
+            for(let equipment of equipments) {
+                if (equipment.equip._id.toString() == idEquipment) {
+                    equipment.wearIs = '000000000000000000000000'
+                    break
+                }
+            }
+
+            console.log(user.bag.equipments)
+
+            await user.save()
+            return res.json({
+                message: 'Thành Công',
+                data: equipments
+            })
+        } catch (error) {
+            return next(error)
+        }
+    }
+
+    // [PATCH] /api/users/:idUser/equipments/equip
+    async equip(req, res, next) {
+        try {
+            const idUser = req.params.idUser
+            const idImmortality = req.body.idImmortality
+            const idEquipment = req.body.idEquipment
+            const user = await User.findById(idUser).populate({ path: 'bag.equipments.equip' })
+            const equipments = user.bag.equipments
+
+            for(let equipment of equipments) {
+                if (equipment.equip._id.toString() == idEquipment) {
+                    equipment.wearIs = ObjectId(idImmortality)
+                    break
+                }
+            }
+
+            await user.save()
+
+            return res.json({
+                message: 'Thành Công',
+                data: equipments
+            })
         } catch (error) {
             return next(error)
         }
