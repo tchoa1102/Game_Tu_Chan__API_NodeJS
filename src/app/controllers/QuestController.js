@@ -51,7 +51,7 @@ class QuestController {
                 if ( historyForQuest[cluster.name] ) {
                     const largestImmortality = cluster.immortalities.reduce((largest, e) => {
                         // find largest level
-                        largest = {...findLargestLevel(levels, largest, e)}
+                        largest = new Object(findLargestLevel(levels, largest, e))
     
                         return largest
                     }, new Object(cluster.immortalities[0]))

@@ -7,8 +7,11 @@ const { UserController, ImmortalityController, QuestController } = require('../a
 router.get('/whoami', UserController.get)
 router.get('/:id/immortalities', ImmortalityController.getAll)
 router.get('/:id/quests', QuestController.getAllQuests)
+router.get('/', UserController.getAll)
+
 // [POST]
 router.post('/:id/immortalities/create', ImmortalityController.createTest)
+
 // [PATCH]
 router.patch('/:idUser/embattle', UserController.embattle)
 router.patch('/:idUser/immortalities/:idImmortality/enlist', ImmortalityController.enlist)

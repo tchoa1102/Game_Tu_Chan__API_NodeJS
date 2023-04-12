@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const ObjectId = mongoose.Types.ObjectId
-const { User, Skill, Immortality } = require('../models')
+const { User, Skill, Immortality, Setup, Fight } = require('../models')
 
 class UserController {
     // [GET] /api/users/whoami
@@ -36,6 +36,392 @@ class UserController {
             })
         } catch (error) {
             next(error)
+        }
+    }
+
+    // [GET] /api/users
+    async getAll(req, res, next) {
+        try {
+            const { levels, } = await Setup.findOne().lean()
+            const listUser = await User.find({}).lean()
+
+            for(let user of listUser) {
+                const immortalities = await Immortality.find({ user: user._id })
+                user.immortalities = immortalities
+
+                const largestImmortality = immortalities.reduce((largest, e) => {
+                    // find largest level
+                    largest = new Object(findLargestLevel(levels, largest, e))
+
+                    return largest
+                }, new Object(immortalities[0]))
+
+                user.maxLevel = largestImmortality.level ? {...largestImmortality.level} 
+                                    : {name: 'Luyện Khí Kì', level: 'Tầng 1'}
+            }
+
+            return res.json(listUser)
+        } catch (error) {
+            return next(error)
+        }
+
+        function findLargestLevel(levels, largest, source) {
+            const largestLevel = largest.level
+            const levelCurrent = source.level
+
+            if (
+                levels[largestLevel.name].index < levels[levelCurrent.name].index
+            ) {
+                largest = {...source}
+            } else if (
+                levels[largestLevel.name].index == levels[levelCurrent.name].index
+            ) {
+                if (levels[largestLevel.name][largestLevel.level].index < levels[levelCurrent.name][levelCurrent.level].index) {
+                    largest = {...source}
+                }
+            }
+    
+            return largest
+        }
+    }
+
+    // [GET] /api/users/:id/fightPlayer/:idPlayer
+    async fightPlayer(req, res, next) {
+        try {
+            // const idUser = req.params.id
+            const idPlayer = req.params.idPlayer
+
+            const idUser = '117658907214625686230111' || req.session.passport.user._id
+
+            const { whos, players, levels, typeOfActivity, typeOfTarget, locationSkill } = await Setup.findOne().lean()
+            // console.log(levels, typeOfActivity, typeOfTarget)
+
+            // user
+            let totalData = 0
+            const avatars = {}
+            const user = await User.findById(idUser).populate({ path: 'bag.equipments.equip', })
+            const equipmentsOfUser = user.bag.equipments
+            const immortalitiesUser = await Immortality.find({user: idUser})
+            totalData += await collectAvatars(avatars, immortalitiesUser)
+            // mounted skills
+            await mountedSkill(immortalitiesUser)
+            // increase
+            increase(levels, immortalitiesUser, equipmentsOfUser)
+            
+            // Player
+            const player = await User.findById(idPlayer).populate({ path: 'bag.equipments.equip', })
+            const equipmentsOfPlayer = player.bag.equipments
+            const immortalitiesPlayer = await Immortality.find({user: idPlayer})
+            totalData += await collectAvatars(avatars, immortalitiesPlayer)
+            // mounted skills
+            await mountedSkill(immortalitiesPlayer)
+            // increase
+            increase(levels, immortalitiesPlayer, equipmentsOfPlayer)
+
+            // fight
+            const mountLeftField = {}
+            const mountRightField = {}
+            mountedField(mountLeftField, immortalitiesUser)
+            mountedField(mountRightField, immortalitiesPlayer)
+            // const queue = new queueMicrotask // ??
+
+            let skillsList = {}
+            let statesList = []
+            const stateFight = {
+                win: 'Thắng Lợi',
+                defense: 'Thất Bại',
+                draw: 'Hòa'
+            }
+
+            // action
+            const result = new Fight(whos, players, mountLeftField, mountRightField, typeOfActivity, typeOfTarget, stateFight)
+                                .run()
+
+            const plot = [...result.plot]
+            skillsList = new Object(result.skillsList)
+            statesList = [...result.statesList]
+
+            const resultFight = result.resultFight
+            if (resultFight == stateFight.win) {
+                const currentQuestName = quest.name
+                const clusterNameIsAttack = cluster.name
+
+                const currentCluster = user.quests[currentQuestName].current
+                currentCluster[clusterNameIsAttack] = clusterNameIsAttack
+
+                // list cluster user will have to attack
+                const nextClusters = user.quests[currentQuestName].next
+                // inspect cluster attacked have on next clusters
+                const isNextCluster =
+                    Object.keys(nextClusters).some(clusterKey => {
+                        if (nextClusters[clusterKey] == clusterNameIsAttack) {
+                            delete nextClusters[clusterKey]
+                            return true
+                        }
+                        return false
+                    })
+
+                console.log(isNextCluster)
+                if (isNextCluster) {
+                    console.log('Next cluster')
+                    // filter return array next cluster
+                    const newNextClusters = quest.clusters.filter(cluster => cluster.front == clusterNameIsAttack)
+                    if (newNextClusters && newNextClusters.length > 0) {
+                        newNextClusters.forEach(newNextCluster => {
+                            const newNextClusterName = newNextCluster.name
+                            nextClusters[newNextClusterName] = newNextClusterName
+                        })
+                    } else {
+                        // (isNextCluster && nextCluster.length < 0) => next Quest
+                        console.log('Next quest')
+                        user.quests[currentQuestName].isNext = true
+                        const newQuests = await Quest.find({front: currentQuestName})
+                        if (newQuests.length > 0) {
+                            newQuests.forEach(newQuest => {
+                                const nextClusterOfNewQuests = newQuest.clusters.filter(cluster => cluster.front == '')
+                                user.quests[newQuest.name] = {
+                                    current: {},
+                                    next: {},
+                                    isNext: false,
+                                }
+        
+                                nextClusterOfNewQuests.forEach(newCluster => {
+                                    const newNextClusterName = newCluster.name
+                                    user.quests[newQuest.name].next[newNextClusterName] = newNextClusterName
+                                })
+                            })
+                        }
+                    }
+                    console.log(user.quests)
+                    await User.updateOne({ _id: user._id }, { quests: user.quests })
+                }
+            }
+
+            // Covert stateList
+            const states = statesList.reduce((result, state) => {
+                const newState = {
+                    name: state.name,
+                    image: state.image,
+                    effect: state.action,
+                    style: state.style,
+                    animation: state.animation,
+                    amount: 1,
+                }
+
+                if (result[state.name] && result[state.name].amount < Object.keys(immortalitiesUser).length + Object.keys(immortalitiesCluster).length) {
+                    result[state.name].amount += 1
+                    totalData += 1
+                } else if (!result[state.name]) {
+                    totalData += 1
+                    result[state.name] = newState
+                }
+                return result
+            }, {})
+
+            const status = {}
+            status.you = collectImmortality(immortalitiesUser, players.you)
+            status.defense = collectImmortality(immortalitiesUser, players.defense)
+            const { newSkills, totalData: td } = collectSkills(skillsList)
+            // console.log(newSkills)
+            totalData += td
+
+            // console.log('\n\n\nresult: ')
+            // console.log('Avatars: ', avatars) //done
+            // console.log('SkillsList: ', skills) //done
+            // console.log(skillsList['Hỏa Cầu'].floor.mainEffect)
+            // console.log('StatesList: ', statesList) //done
+            // console.log('Status: ', status) //done
+            // console.log('mountLeftField: ', mountLeftField)
+            // console.log('mountRightField: ', mountRightField)
+            // console.log('Immortality User: ', immortalitiesUser)
+            // console.log('Immortality Cluster: ', immortalitiesCluster)
+            // console.log(plot, plot.length)
+            // plot.forEach((round) => {
+            //     console.log(round)
+            // })
+            // plot.forEach((round, index) => console.log(index, round.you.effects, round.defense.effects, '\n'))
+            console.log('\n\nThe End!')
+            return res.json({
+                avatars,
+                skills: newSkills,
+                states,
+                status,
+                plot,
+                resultFight,
+                totalData,
+                locationSkill,
+            })
+        } catch (error) {
+            return next(error)
+        }
+
+        function isLargerOrEqual(levels, target, nameLevel, step) {
+            if (levels[target.name].index > levels[nameLevel].index) {
+                return true
+            } else if (
+                levels[target.name].index == levels[nameLevel].index &&
+                levels[target.name][target.level].index >= levels[nameLevel][step].index 
+            ) {
+                return true
+            }
+
+            return false
+        }
+
+        function findIndicatorIncrement(levels, immortality) {
+            let indicator = 1
+            Object.keys(levels).forEach( nameLevel => {
+                Object.keys(levels[nameLevel]).forEach( step => {
+                    if (isLargerOrEqual(levels, immortality.level, nameLevel, step)) {
+                        const eraseX = levels[nameLevel][step].increase.substr(1)
+                        const increase = Number.parseFloat(eraseX)
+                        indicator *= increase
+                    }
+                })
+            })
+
+            return indicator
+        }
+
+        async function collectAvatars(avatars, immortalities) {
+            let totalData = 0
+            for(const immortality of immortalities) {
+                const newAvatar = await Avatar.findOne({ name: immortality.avatar })
+                if (newAvatar) {
+                    avatars[newAvatar.name] = newAvatar.effects
+                    totalData += Object.keys(newAvatar.effects).length
+                }
+            }
+            return totalData
+        }
+
+        function collectImmortality(immortalities, who) {
+            const newImmortalities = {}
+            immortalities.forEach(immortality => {
+                const newImmortality = {
+                    index: immortality.index * who,
+                    name: immortality.name,
+                    avatar: immortality.avatar,
+                    hp: immortality.status.HP,
+                    mp: immortality.status.MP,
+                    currentHP: immortality.currentStatus.HP,
+                    currentMP: immortality.currentStatus.MP,
+                    status: immortality.status,
+                }
+                newImmortalities[immortality.index] = newImmortality
+            })
+
+            return newImmortalities
+        }
+
+        function collectSkills(skills) {
+            let totalData = 0
+            const newSkills = Object.keys(skills).reduce((result, key) => {
+                skills[key].floor.activities.forEach(activity => {
+                    if (!result[activity.effects.mainEffect.name]) {
+                        const newSkill = {
+                            name: activity.effects.mainEffect.name,
+                            amount: 5,
+                            style: activity.effects.mainEffect.style,
+                            animation: activity.effects.mainEffect.animation,
+                            startIs: activity.effects.mainEffect.startIs,
+                            location: activity.effects.mainEffect.location,
+                            effects: {
+                                sky: activity.effects.sky,
+                                figure: activity.effects.figure,
+                                action: activity.effects.mainEffect.action,
+                            },
+                            delay: activity.effects.delay,
+                        }
+                        result[activity.effects.mainEffect.name] = newSkill
+                        totalData += result[activity.effects.mainEffect.name].amount
+                    }
+                })
+                return result
+            }, {})
+
+            return { newSkills, totalData }
+        }
+
+        function increase(levels, immortalities, equipments) {
+            immortalities.forEach( currentImmortality => {
+                // increase from level
+                increaseStatusFromLevel(levels, currentImmortality)
+                // increase from equipment
+                increaseFromEquipment(equipments, immortalities)
+                // increase from skill
+
+            })
+        }
+
+        function increaseStatusFromLevel(levels, immortality) {
+            const increase = findIndicatorIncrement(levels, immortality)
+            Object.keys(immortality.status).forEach( property => {
+                immortality.status[property] *= increase
+            })
+            Object.keys(immortality.currentStatus).forEach( property => {
+                immortality.currentStatus[property] *= increase
+            })
+        }
+
+        function increaseFromEquipment(equipments, immortalities) {
+            equipments.forEach( equip => {
+                immortalities.forEach( immortality => {
+                    if (immortality._id.toString() == equip.wearIs.toString()) {
+                        // console.log(equip)
+                        const increase = equip.equip.property.value
+                        immortality.status[equip.equip.property.type] += increase
+                        // immortality.status[equip.equip.property.type] += increase
+                        if (equip.equip.property.type == 'HP') {
+                            immortality.currentStatus.HP += increase
+                        }
+                        if (equip.equip.property.type == 'MP') {
+                            immortality.currentStatus.MP += increase
+                        }
+                    }
+                })
+            })
+        }
+
+        function mountedField(field, immortalities) {
+            immortalities.forEach(immortality => {
+                field[immortality.index] = {
+                    isActor: false,
+                    index: immortality.index,
+                    currentStatus: {...immortality.status},
+                    status: {...immortality.status},
+                    skills: {...immortality.skills},
+                    operateEveryRoundStates: {}, // (key: value)
+                    toKeepStatesAlive: {}, // (key: value)
+                    /**
+                     * key: {
+                     *  name: ,
+                     *  property: {}
+                     *  timeline: , // each round will be subtract, == 0 => delete
+                     *  effect: {}
+                     * }
+                     */
+                }
+
+                field[immortality.index].currentStatus.HP = immortality.currentStatus.HP
+                field[immortality.index].currentStatus.MP = immortality.currentStatus.MP
+            })
+        }
+
+        async function mountedSkill(immortalities) {
+            for(let e of immortalities) {
+                const avatar = await Avatar.findOne({name: e.avatar})
+                e.effects = avatar.effects
+
+                for(let key in e.skills) {
+                    const skill = await Skill.findOne({name: key}).populate({ path: 'floors.activities.operateEveryRoundStates.effect' })
+                                                                .populate({ path: 'floors.activities.toKeepStatesAlive.effect' })
+                                                                .populate({ path: 'floors.activities.effects.mainEffect' })
+                                                                // .populate({ path: 'floors.mainEffect.effect' })
+                    e.skills[key].description = skill.description
+                    e.skills[key].floor = skill.floors.find((floor) => floor.name == e.skills[key].floor)
+                }
+            }
         }
     }
 
