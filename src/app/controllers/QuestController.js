@@ -137,7 +137,7 @@ class QuestController {
         const idCluster = req.params.idCluster
 
         try {
-            const idUser = '117658907214625686230111' || req.session.passport.user._id
+            const idUser = req.session.passport.user._id
 
             const { whos, players, levels, typeOfActivity, typeOfTarget, locationSkill } = await Setup.findOne().lean()
             // console.log(levels, typeOfActivity, typeOfTarget)
@@ -241,6 +241,9 @@ class QuestController {
                     console.log(user.quests)
                     await User.updateOne({ _id: user._id }, { quests: user.quests })
                 }
+
+                // Gift
+                const awards = cluster.awards
             }
 
             // Covert stateList
@@ -266,7 +269,7 @@ class QuestController {
 
             const status = {}
             status.you = collectImmortality(immortalitiesUser, players.you)
-            status.defense = collectImmortality(immortalitiesUser, players.defense)
+            status.defense = collectImmortality(immortalitiesCluster, players.defense)
             const { newSkills, totalData: td } = collectSkills(skillsList)
             // console.log(newSkills)
             totalData += td

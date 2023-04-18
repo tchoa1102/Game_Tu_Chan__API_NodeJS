@@ -96,10 +96,10 @@ class Fight {
             ) {
                 Object.keys(operateEveryRoundStates).forEach(key => {
                     const { type, value } = operateEveryRoundStates[key].property
-                    const typeEffect = findTypeEffect(value)
+                    const typeEffect = this.findTypeEffect(value)
                     const t = typeEffect.substring(0, typeEffect.length - 1)
                     const effect = {
-                        type: t,
+                        type: `${t}-${type}`,
                         [typeEffect]: [value]
                     }
                     // console.log(type, value, "timeline: ", operateEveryRoundStates[key].timeline)
@@ -161,8 +161,8 @@ class Fight {
             this.skillsList[skillKey] = actorImmortality.skills[skillKey]
 
             // pointer to floor
-            const floor = actorImmortality.skills[skillKey].floor
-            const consume = floor.consume
+            const floor = actorImmortality.skills[skillKey]?.floor || {}
+            const consume = floor?.consume || []
             // computed consume of skill
             roundHistory[whoAmI].consumes = []
             consume.forEach(fee => {
@@ -181,7 +181,7 @@ class Fight {
             })
 
             // pointer to activities
-            const activities = floor.activities
+            const activities = floor?.activities || []
             for (const activity of activities) {
                 if (
                     Object.keys(mainImmortalitiesObject).length == 0 &&
@@ -413,7 +413,7 @@ class Fight {
     handleComputed(who, mainImmortality, mainImmortalitiesObject, targetImmortalityObject, targetImmortalitiesObject, effect, typeEffect, activity, effectAfterSkill) {
         this.handleComputedDamage(who, mainImmortality, targetImmortalityObject, targetImmortalitiesObject, effect, typeEffect, activity)
         if (targetImmortalityObject) {
-            this.addState(mainImmortality, targetImmortalityObject, activity.operateEveryRoundStates, effectAfterSkill)
+            this.addState(who, mainImmortality, targetImmortalityObject, activity.operateEveryRoundStates, effectAfterSkill)
             this.addKeepStateAlive(who, mainImmortality, mainImmortalitiesObject, targetImmortalityObject, targetImmortalitiesObject, activity.toKeepStatesAlive, effectAfterSkill)
         }
     }
@@ -491,29 +491,54 @@ class Fight {
 
         operateEveryRoundStates.forEach(state => {
             this.statesList.push(new Object(state.effect))
-            const actionEffect = {
-                type: 'action',
-                name: state.effect.name,
-                objects: [],
-            }
             if (this.whos[state.who] < 0) { // enemy
-                if ( ! statesOfTargetImmortality[state.effect.name] || statesOfTargetImmortality[state.effect.name].timeline < state.timeline) {
+                if ( ! statesOfTargetImmortality[state.effect.name]) {
+                    const actionEffect = {
+                        type: 'action',
+                        name: state.effect.name,
+                        objects: [],
+                    }
+
                     statesOfTargetImmortality[state.effect.name] = state
                     actionEffect.objects.push(targetImmortality.index * who * this.whos[state.who])
+
+                    effectStates.push(actionEffect)
+                } else if (statesOfTargetImmortality[state.effect.name].timeline < state.timeline) {
+                    statesOfTargetImmortality[state.effect.name] = state
                 }
             } else if (this.whos[state.who] > 0) { //you
-                if ( ! statesOfMainImmortality[state.effect.name] || statesOfMainImmortality[state.effect.name].timeline < state.timeline) {
+                if ( ! statesOfMainImmortality[state.effect.name]) {
+                    const actionEffect = {
+                        type: 'action',
+                        name: state.effect.name,
+                        objects: [],
+                    }
+
                     statesOfMainImmortality[state.effect.name] = state
                     actionEffect.objects.push(mainImmortality.index * who * this.whos[state.who])
+
+                    effectStates.push(actionEffect)
+                } else if (statesOfMainImmortality[state.effect.name].timeline < state.timeline) {
+                    statesOfMainImmortality[state.effect.name] = state
                 }
             } else if (this.whos[state.who] == 0) { // other from your field
-                if ( ! statesOfTargetImmortality[state.effect.name] || statesOfTargetImmortality[state.effect.name].timeline < state.timeline) {
+                if ( ! statesOfTargetImmortality[state.effect.name]) {
+                    const actionEffect = {
+                        type: 'action',
+                        name: state.effect.name,
+                        objects: [],
+                    }
+
                     statesOfTargetImmortality[state.effect.name] = state
                     actionEffect.objects.push(targetImmortality.index * who * this.whos[state.who])
+
+                    effectStates.push(actionEffect)
+                } else if (statesOfTargetImmortality[state.effect.name].timeline < state.timeline) {
+                    statesOfTargetImmortality[state.effect.name] = state
                 }
             }
-            effectStates.push(actionEffect)
         })
+
     }
 
     addKeepStateAlive(who, mainImmortalityObject, mainImmortalitiesObject, targetImmortalityObject, targetImmortalitiesObject, operateEveryRoundStates, effectStates) { // other: thisImmortality, immortalities same same field

@@ -9,7 +9,7 @@ const Immortality = new Schema({
     name: { type: String, },
     index: { type: Number, default: -1, },
     level: { type: Object, default: {
-        name: 'Luyện Khí kì',
+        name: 'Luyện Khí Kì',
         level: 'Tầng 1',
     },},
     avatar: { type: String, default: 'monk' },
@@ -34,7 +34,13 @@ const Immortality = new Schema({
     //     auxiliaries: [],
     //     attacks: [],
     // },
-    skills: { type: Object, default: {}, },
+    skills: { type: Object, default: {
+        "Đánh Thường": {
+            "_id": "643d0236997c16201596f65d",
+            "floor": "",
+            "exp": 86400
+        }
+    }, },
     /**
      * "skill name": {
             floor: { type: String, }, // currently floor

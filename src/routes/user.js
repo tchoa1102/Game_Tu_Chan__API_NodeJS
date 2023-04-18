@@ -7,6 +7,7 @@ const { UserController, ImmortalityController, QuestController } = require('../a
 router.get('/whoami', UserController.get)
 router.get('/:id/immortalities', ImmortalityController.getAll)
 router.get('/:id/quests', QuestController.getAllQuests)
+router.get('/:id/fightPlayer/:idPlayer', UserController.fightPlayer)
 router.get('/', UserController.getAll)
 
 // [POST]

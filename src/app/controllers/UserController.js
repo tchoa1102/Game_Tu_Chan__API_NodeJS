@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const ObjectId = mongoose.Types.ObjectId
-const { User, Skill, Immortality, Setup, Fight } = require('../models')
+const { User, Skill, Immortality, Setup, Fight, Avatar } = require('../models')
 
 class UserController {
     // [GET] /api/users/whoami
@@ -91,7 +91,8 @@ class UserController {
             // const idUser = req.params.id
             const idPlayer = req.params.idPlayer
 
-            const idUser = '117658907214625686230111' || req.session.passport.user._id
+            // const idUser = '117658907214625686230111' || req.session.passport.user._id
+            const idUser = req.session.passport.user._id
 
             const { whos, players, levels, typeOfActivity, typeOfTarget, locationSkill } = await Setup.findOne().lean()
             // console.log(levels, typeOfActivity, typeOfTarget)
@@ -143,58 +144,7 @@ class UserController {
 
             const resultFight = result.resultFight
             if (resultFight == stateFight.win) {
-                const currentQuestName = quest.name
-                const clusterNameIsAttack = cluster.name
-
-                const currentCluster = user.quests[currentQuestName].current
-                currentCluster[clusterNameIsAttack] = clusterNameIsAttack
-
-                // list cluster user will have to attack
-                const nextClusters = user.quests[currentQuestName].next
-                // inspect cluster attacked have on next clusters
-                const isNextCluster =
-                    Object.keys(nextClusters).some(clusterKey => {
-                        if (nextClusters[clusterKey] == clusterNameIsAttack) {
-                            delete nextClusters[clusterKey]
-                            return true
-                        }
-                        return false
-                    })
-
-                console.log(isNextCluster)
-                if (isNextCluster) {
-                    console.log('Next cluster')
-                    // filter return array next cluster
-                    const newNextClusters = quest.clusters.filter(cluster => cluster.front == clusterNameIsAttack)
-                    if (newNextClusters && newNextClusters.length > 0) {
-                        newNextClusters.forEach(newNextCluster => {
-                            const newNextClusterName = newNextCluster.name
-                            nextClusters[newNextClusterName] = newNextClusterName
-                        })
-                    } else {
-                        // (isNextCluster && nextCluster.length < 0) => next Quest
-                        console.log('Next quest')
-                        user.quests[currentQuestName].isNext = true
-                        const newQuests = await Quest.find({front: currentQuestName})
-                        if (newQuests.length > 0) {
-                            newQuests.forEach(newQuest => {
-                                const nextClusterOfNewQuests = newQuest.clusters.filter(cluster => cluster.front == '')
-                                user.quests[newQuest.name] = {
-                                    current: {},
-                                    next: {},
-                                    isNext: false,
-                                }
-        
-                                nextClusterOfNewQuests.forEach(newCluster => {
-                                    const newNextClusterName = newCluster.name
-                                    user.quests[newQuest.name].next[newNextClusterName] = newNextClusterName
-                                })
-                            })
-                        }
-                    }
-                    console.log(user.quests)
-                    await User.updateOne({ _id: user._id }, { quests: user.quests })
-                }
+                
             }
 
             // Covert stateList
@@ -208,7 +158,7 @@ class UserController {
                     amount: 1,
                 }
 
-                if (result[state.name] && result[state.name].amount < Object.keys(immortalitiesUser).length + Object.keys(immortalitiesCluster).length) {
+                if (result[state.name] && result[state.name].amount < Object.keys(immortalitiesUser).length + Object.keys(immortalitiesPlayer).length) {
                     result[state.name].amount += 1
                     totalData += 1
                 } else if (!result[state.name]) {
@@ -220,7 +170,7 @@ class UserController {
 
             const status = {}
             status.you = collectImmortality(immortalitiesUser, players.you)
-            status.defense = collectImmortality(immortalitiesUser, players.defense)
+            status.defense = collectImmortality(immortalitiesPlayer, players.defense)
             const { newSkills, totalData: td } = collectSkills(skillsList)
             // console.log(newSkills)
             totalData += td
@@ -234,7 +184,7 @@ class UserController {
             // console.log('mountLeftField: ', mountLeftField)
             // console.log('mountRightField: ', mountRightField)
             // console.log('Immortality User: ', immortalitiesUser)
-            // console.log('Immortality Cluster: ', immortalitiesCluster)
+            // console.log('Immortality Cluster: ', immortalitiesPlayer)
             // console.log(plot, plot.length)
             // plot.forEach((round) => {
             //     console.log(round)
@@ -317,7 +267,7 @@ class UserController {
         function collectSkills(skills) {
             let totalData = 0
             const newSkills = Object.keys(skills).reduce((result, key) => {
-                skills[key].floor.activities.forEach(activity => {
+                skills[key]?.floor.activities.forEach(activity => {
                     if (!result[activity.effects.mainEffect.name]) {
                         const newSkill = {
                             name: activity.effects.mainEffect.name,
