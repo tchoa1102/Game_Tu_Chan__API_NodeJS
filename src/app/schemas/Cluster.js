@@ -25,7 +25,8 @@ const Cluster = new Schema({
                 type: ObjectId,
                 ref: 'Item',
             },
-            quantity: Number
+            quantity: Number,
+            rate: String,
         }],
         skills: [{
             skill: {
@@ -33,7 +34,7 @@ const Cluster = new Schema({
                 ref: 'Skill',
             },
             quantity: Number,
-            trainings: {}
+            rate: String,
         }],
         equipments: [{
             equip: {
@@ -41,6 +42,7 @@ const Cluster = new Schema({
                 ref: 'Equipment',
             },
             quantity: Number,
+            rate: String,
         }],
     },
 })

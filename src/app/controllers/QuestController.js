@@ -244,6 +244,27 @@ class QuestController {
 
                 // Gift
                 const awards = cluster.awards
+                const rateItems = Array(100).fill(0)
+                awards.items.forEach(e => {
+                    rateItems.fill(1, 0, Number.parseInt(e.rate))
+                    const index = Math.floor(Math.random() * 100)
+                    if (rateItems[index] == 1) {
+                        const index = user.bag.items.findIndex(item => {
+                            // console.log(item.item.toString(), e.item.toString(), item.item.toString() == e.item.toString())
+                            return (item?.item?.toString()) ==( e?.item?.toString())
+                        })
+                        if (index != -1) {
+                            user.bag.items[index] += e.quantity
+                        } else {
+                            user.bag.items.push({
+                                item: e.item,
+                                quantity: e.quantity
+                            })
+                        }
+                    }
+                })
+
+                // await user.save()
             }
 
             // Covert stateList
