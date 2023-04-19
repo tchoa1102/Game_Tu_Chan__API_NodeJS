@@ -188,6 +188,7 @@ class QuestController {
             statesList = [...result.statesList]
 
             const resultFight = result.resultFight
+            const receivedAwards = []
             if (resultFight == stateFight.win) {
                 const currentQuestName = quest.name
                 const clusterNameIsAttack = cluster.name
@@ -243,28 +244,71 @@ class QuestController {
                 }
 
                 // Gift
+                const bag = user.bag
                 const awards = cluster.awards
                 const rateItems = Array(100).fill(0)
                 awards.items.forEach(e => {
                     rateItems.fill(1, 0, Number.parseInt(e.rate))
                     const index = Math.floor(Math.random() * 100)
                     if (rateItems[index] == 1) {
-                        const index = user.bag.items.findIndex(item => {
+                        receivedAwards.push(e)
+                        const index = bag.items.findIndex(item => {
                             // console.log(item.item.toString(), e.item.toString(), item.item.toString() == e.item.toString())
                             return (item?.item?.toString()) ==( e?.item?.toString())
                         })
                         if (index != -1) {
-                            user.bag.items[index] += e.quantity
+                            bag.items[index].quantity += e.quantity
                         } else {
-                            user.bag.items.push({
+                            bag.items.push({
                                 item: e.item,
                                 quantity: e.quantity
                             })
                         }
                     }
+                    rateItems.fill(0, 0, Number.parseInt(e.rate))
+                })
+                awards.skills.forEach(e => {
+                    rateItems.fill(1, 0, Number.parseInt(e.rate))
+                    const index = Math.floor(Math.random() * 100)
+                    if (rateItems[index] == 1) {
+                        receivedAwards.push(e)
+                        const index = bag.items.findIndex(item => {
+                            // console.log(item.item.toString(), e.item.toString(), item.item.toString() == e.item.toString())
+                            return (item?.skill?.toString()) ==( e?.skill?.toString())
+                        })
+                        if (index != -1) {
+                            bag.skills[index].quantity += e.quantity
+                        } else {
+                            bag.skills.push({
+                                skill: e.skill,
+                                quantity: e.quantity
+                            })
+                        }
+                    }
+                    rateItems.fill(0, 0, Number.parseInt(e.rate))
+                })
+                awards.equipments.forEach(e => {
+                    rateItems.fill(1, 0, Number.parseInt(e.rate))
+                    const index = Math.floor(Math.random() * 100)
+                    if (rateItems[index] == 1) {
+                        receivedAwards.push(e)
+                        const index = bag.items.findIndex(item => {
+                            // console.log(item.item.toString(), e.item.toString(), item.item.toString() == e.item.toString())
+                            return (item?.equip?.toString()) ==( e?.equip?.toString())
+                        })
+                        if (index != -1) {
+                            bag.equipments[index].quantity += e.quantity
+                        } else {
+                            bag.equipments.push({
+                                equip: e.equip,
+                                quantity: e.quantity
+                            })
+                        }
+                    }
+                    rateItems.fill(0, 0, Number.parseInt(e.rate))
                 })
 
-                // await user.save()
+                await User.updateOne({ _id: user._id }, { bag: bag })
             }
 
             // Covert stateList
@@ -320,6 +364,7 @@ class QuestController {
                 resultFight,
                 totalData,
                 locationSkill,
+                receivedAwards,
             })
         } catch (error) {
             return next(error)
