@@ -155,7 +155,11 @@ class QuestController {
             increase(levels, immortalitiesUser, equipmentsOfUser)
             
             // cluster
-            const quest = await Quest.findById(idQuest).populate({ path: 'clusters.immortalities' })
+            const quest = await Quest.findById(idQuest)
+                .populate({ path: 'clusters.immortalities' })
+                .populate({ path: 'clusters.awards.items.item' })
+                .populate({ path: 'clusters.awards.skills.skill' })
+                .populate({ path: 'clusters.awards.equipments.equip' })
             const cluster = quest.clusters.find( cluster => idCluster == cluster._id.toString() )
             const immortalitiesCluster = cluster.immortalities
             totalData += await collectAvatars(avatars, immortalitiesCluster)
@@ -253,14 +257,13 @@ class QuestController {
                     if (rateItems[index] == 1) {
                         receivedAwards.push(e)
                         const index = bag.items.findIndex(item => {
-                            // console.log(item.item.toString(), e.item.toString(), item.item.toString() == e.item.toString())
-                            return (item?.item?.toString()) ==( e?.item?.toString())
+                            return (item?.item?.toString()) == (e?.item?._id.toString())
                         })
                         if (index != -1) {
                             bag.items[index].quantity += e.quantity
                         } else {
                             bag.items.push({
-                                item: e.item,
+                                item: e.item._id,
                                 quantity: e.quantity
                             })
                         }
@@ -272,18 +275,11 @@ class QuestController {
                     const index = Math.floor(Math.random() * 100)
                     if (rateItems[index] == 1) {
                         receivedAwards.push(e)
-                        const index = bag.items.findIndex(item => {
-                            // console.log(item.item.toString(), e.item.toString(), item.item.toString() == e.item.toString())
-                            return (item?.skill?.toString()) ==( e?.skill?.toString())
+                        
+                        bag.skills.push({
+                            skill: e.skill._id,
+                            quantity: e.quantity
                         })
-                        if (index != -1) {
-                            bag.skills[index].quantity += e.quantity
-                        } else {
-                            bag.skills.push({
-                                skill: e.skill,
-                                quantity: e.quantity
-                            })
-                        }
                     }
                     rateItems.fill(0, 0, Number.parseInt(e.rate))
                 })
@@ -292,18 +288,11 @@ class QuestController {
                     const index = Math.floor(Math.random() * 100)
                     if (rateItems[index] == 1) {
                         receivedAwards.push(e)
-                        const index = bag.items.findIndex(item => {
-                            // console.log(item.item.toString(), e.item.toString(), item.item.toString() == e.item.toString())
-                            return (item?.equip?.toString()) ==( e?.equip?.toString())
+                        
+                        bag.equipments.push({
+                            equip: e.equip._id,
+                            quantity: e.quantity
                         })
-                        if (index != -1) {
-                            bag.equipments[index].quantity += e.quantity
-                        } else {
-                            bag.equipments.push({
-                                equip: e.equip,
-                                quantity: e.quantity
-                            })
-                        }
                     }
                     rateItems.fill(0, 0, Number.parseInt(e.rate))
                 })
