@@ -73,10 +73,6 @@ const User = new Schema({
         8: { type: String, default: '', },
         9: { type: String, default: '', },
     },
-    showMarket: [{
-        marksItem: { type: ObjectId, ref: 'Market', },
-        isShow: { type: Boolean, default: true, },
-    },],
 })
 
 module.exports = mongoose.model('User', User)
