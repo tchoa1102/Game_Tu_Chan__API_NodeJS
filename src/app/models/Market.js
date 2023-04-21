@@ -1,18 +1,32 @@
 const mongoose = require('mongoose')
 const Schema = mongoose.Schema
 const ObjectId = mongoose.ObjectId
+const newObjectId = mongoose.Types.ObjectId
 
 const Market = new Schema({
-    yield: { type: ObjectId, required: true, unique: true, },
-    type: { type: String, required: true, default: 'Equipment'},
+    item: { type: ObjectId, ref: 'Item' },
+    equipment: { type: ObjectId, ref: 'Equipment' },
+    skill: { type: ObjectId, ref: 'Skill' },
+    type: { type: String, default: 'equipment'},
     quantity: { type: Number, default: 1, },
-    prices: { type: Object, default: {
-        '64002ada2f93ddad6483a848': {
-            id: '64002ada2f93ddad6483a848',
-            type: 'Item',
-            quantity: 1,
-        }
-    }, },
+    prices: {
+        items: [{
+            data: { type: ObjectId, ref: 'Item', default: newObjectId('64002ada2f93ddad6483a848'), },
+            type: { type: String, default: 'item', },
+            quantity: { type: Number, default: 1, },
+        }],
+        equips: [{
+            data: { type: ObjectId, ref: 'Equipment', },
+            type: { type: String, default: 'equipment', },
+            quantity: { type: Number, default: 1, },
+        }],
+        skills: [{
+            data: { type: ObjectId, ref: 'Skill', },
+            type: { type: String, default: 'skill', },
+            quantity: { type: Number, default: 1, },
+        }],
+    },
+    isPost: { type: Boolean, default: false, },
 })
 
 module.exports = mongoose.model('Market', Market)

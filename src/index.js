@@ -6,7 +6,11 @@ const morgan = require('morgan')
 const passport = require('passport')
 const cookieSession = require('cookie-session')
 
+const cron = require('node-cron')
+
 const app = express()
+
+const { Market, } = require('./app/models')
 
 // Import dotenv
 const keyPath = path.join(__dirname, '../.env')
@@ -39,6 +43,30 @@ app.use(passport.session())
 
 // use
 app.use(morgan('combined'))
+
+// Schedules
+let updateMarket = cron.schedule('0 0 6,12,19 * * *', async () => {
+    console.log('\n\n --------------------------------\nUpdate Market')
+    const market = await Market.find({})
+    const itemsSize = market.length
+    
+    await Market.updateMany({ isPost: true }, { isPost: false })
+
+    const itemsShow = []
+    const indexShow = {}
+    for(let i = 0; i < 20 && i < itemsSize; i++) {
+        const index = Math.floor(Math.random() * itemsSize)
+        if ( !indexShow[index] ) {
+            indexShow[index] = true
+            itemsShow.push(market[index]._id)
+        }
+    }
+
+    await Market.updateMany({ _id: { $in: itemsShow } }, { isPost: true })
+    console.log('\n================================\n')
+})
+
+updateMarket.start()
 
 // route
 router(app)
