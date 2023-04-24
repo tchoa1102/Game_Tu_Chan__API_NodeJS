@@ -15,6 +15,7 @@ router.post('/:id/immortalities/create', ImmortalityController.createTest)
 
 // [PATCH]
 router.patch('/:idUser/embattle', UserController.embattle)
+router.patch('/:idUser/embattleRecover', UserController.embattleRecover)
 router.patch('/:idUser/immortalities/:idImmortality/enlist', ImmortalityController.enlist)
 router.patch('/:idUser/immortalities/:idImmortality/training/:skillName/increaseSpeed', ImmortalityController.increaseSpeed)
 router.patch('/:idUser/equipments/remove', UserController.removeEquip)

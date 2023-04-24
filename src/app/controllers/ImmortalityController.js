@@ -134,7 +134,7 @@ class ImmortalityController {
                         if (floor.trainedTime > skillIsIncreasedSpeed.exp) {
                             const isExistAndEnough = floor.costs.every((cost) => items.some(item => {
                                 // exist and enough
-                                return cost.item._id.toString() == item.item._id.toString() && cost.quantity <= item.quantity
+                                return cost.item._id.toString() == item.item._id.toString() && cost.quantity <= item.quantity && cost.quantity != 0
                             }))
                             console.log(isExistAndEnough)
                             if (isExistAndEnough) {
@@ -145,6 +145,8 @@ class ImmortalityController {
                                     }
                                     return 1
                                 }))
+                            } else {
+                                return res.json({ message: 'Thất Bại, Nguyên Liệu Không Đủ' })
                             }
                             console.log('Save')
                             await user.save()

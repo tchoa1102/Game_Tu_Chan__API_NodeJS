@@ -385,11 +385,13 @@ class UserController {
             const user = await User.findById(idUser)
             const immortality = await Immortality.findById(idImmortality)
             const strategy = user.strategy
-            // location on strategy is exists
-            if ( !! strategy[index] ) {
-                if (strategy[index] != immortality._id) {
-                    // immortality was embattled
-                    if ( !!immortality.index ) {
+
+            // This immortality was embattled
+            if (immortality.index != -1 || ! immortality.hasOwnProperty('index')) {
+                // location on strategy is exists
+                if ( !! strategy[index] ) {
+                    // This location deference with immortality's location
+                    if (strategy[index] != immortality._id) {
                         const lastImmortality = await Immortality.findById(strategy[index])
                         // index == lastImmortality.index => true
                         console.log(strategy[index], strategy[immortality.index])
@@ -400,16 +402,65 @@ class UserController {
                         lastImmortality.index = immortality.index
                         immortality.index = index
                         console.log(index, lastImmortality.index, immortality.index)
-                        console.log('Swap')
+                        console.log('Hoán Đổi Vị Trí')
 
                         await lastImmortality.save()
                     }
+                } else {
+                    console.log('Đổi Vị Trí')
+                    strategy[immortality.index] = ''
+                    strategy[index] = immortality._id
+                    immortality.index = index
                 }
             } else {
-                console.log('Xuất trận')
-                strategy[index] = immortality._id
-                immortality.index = index
+                // location on strategy is exists
+                if ( !! strategy[index] ) {
+                    const lastImmortality = await Immortality.findById(strategy[index])
+                    if (lastImmortality) {
+                        lastImmortality.index = -1
+                        await lastImmortality.save()
+                    }
+                    immortality.index = index
+                    strategy[index] = immortality._id
+                } else {
+                    const countImmortalityOnBattle = Object.keys(strategy).reduce((total, local) => {
+                        if ( !! strategy[local] ) {
+                            total += 1
+                        }
+                    }, 0)
+                    if (countImmortalityOnBattle < 4) {
+                        console.log('Xuất trận')
+                        strategy[index] = immortality._id
+                        immortality.index = index
+                    } else {
+                        return res.json({ message: 'Đầy' })
+                    }
+                }
             }
+            await user.save()
+            await immortality.save()
+            return res.json(immortality)
+        } catch (error) {
+            return next(error)
+        }
+    }
+
+    // [PATCH] /api/users/:idUser/embattleRecover
+    async embattleRecover(req, res, next) {
+        try {
+            const body = req.body
+            const idUser = req.params.idUser
+            const idImmortality = body.idImmortality
+            const user = await User.findById(idUser)
+            const immortality = await Immortality.findById(idImmortality)
+            const strategy = user.strategy
+
+            immortality.index = -1
+            Object.keys(strategy).forEach(key => {
+                if (strategy[key] == immortality._id) {
+                    strategy[key] = ''  
+                }
+            })
             await user.save()
             await immortality.save()
             return res.json(immortality)
