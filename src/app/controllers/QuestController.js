@@ -39,12 +39,12 @@ class QuestController {
 
             let historyForQuest = {}
             // this quest is not clear
-            if ( !user.quests[result.name].isNext ) {
-                const current = user.quests[result.name].current
-                const next = user.quests[result.name].next
+            const current = user.quests[result.name].current
+            const next = user.quests[result.name].next
 
-                Object.assign(historyForQuest, current, next)
-            }
+            Object.assign(historyForQuest, current, next)
+
+            console.log('History: ', historyForQuest)
 
             const clusters = result.clusters.filter(cluster => {
                 // cluster that user won and next cluster
