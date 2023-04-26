@@ -101,11 +101,45 @@ class ImmortalityController {
     async training(req, res, next) {
         try {
             const idUser = req.params.idUser
+            const user = await User.findById(idUser)
             const idImmortality = req.params.idImmortality
             const skillName = req.params.skillName.replace(/-/g, ' ')
             
+            const skill = await Skill.findOne({ name: skillName })
             const immortality = await Immortality.findById(idImmortality)
+
+            // Start training => sub cost => full lv1
+            const isExistAndEnough = floor.costs.every((cost) => items.some(item => {
+                // exist and enough
+                return cost.item._id.toString() == item.item._id.toString() && cost.quantity <= item.quantity && cost.quantity != 0
+            }))
+            console.log(isExistAndEnough)
+            if (isExistAndEnough) {
+                // sub costs
+                floor.costs.every((cost) => items.some(item => {
+                    if (cost.item._id.toString() == item.item._id.toString()) {
+                        console.log('------------')
+                        item.quantity -= cost.quantity
+                    }
+                    return 1
+                }))
+            } else {
+                return res.json({ message: 'Thất Bại, Nguyên Liệu Không Đủ' })
+            }
+            console.log('Save')
+            await user.save()
+
             immortality.trainingSkill = skillName
+            immortality.skills[skillName] = {
+                _id: skill._id,
+                floor: skill.floors[0].name,
+                exp: 0
+            }
+            console.log(immortality.skills)
+            await Immortality.findByIdAndUpdate(immortality._id, {
+                skills: immortality.skills,
+                trainingSkill: immortality.trainingSkill
+            })
             await immortality.save()
             return res.json({ message: 'Thành Công' })
         } catch (error) {
@@ -119,18 +153,18 @@ class ImmortalityController {
             const idUser = req.params.idUser
             const idImmortality = req.params.idImmortality
             const skillName = req.params.skillName.replace(/-/g, ' ')
-            const timeSpeed = 60 // 60 seconds
-
+            
             const user = await User.findById(idUser).populate({ path: 'bag.items.item' })
             const items = user.bag.items
             const immortality = await Immortality.findById(idImmortality)
             const skillIsIncreasedSpeed = immortality.skills[immortality.trainingSkill]
             const skill = await Skill.findOne({name: immortality.trainingSkill}).populate({ path: 'floors.costs.item' })
-
+            
             if (skill) {
                 for(let i = 0; i < skill.floors.length; i++) {
                     const floor = skill.floors[i]
                     if (floor.name == skillIsIncreasedSpeed.floor) {
+                        const timeSpeed = floor.trainedTime
                         if (floor.trainedTime > skillIsIncreasedSpeed.exp) {
                             const isExistAndEnough = floor.costs.every((cost) => items.some(item => {
                                 // exist and enough
@@ -138,6 +172,7 @@ class ImmortalityController {
                             }))
                             console.log(isExistAndEnough)
                             if (isExistAndEnough) {
+                                // sub costs
                                 floor.costs.every((cost) => items.some(item => {
                                     if (cost.item._id.toString() == item.item._id.toString()) {
                                         console.log('------------')
@@ -155,6 +190,15 @@ class ImmortalityController {
                                 skillIsIncreasedSpeed.exp = floor.trainedTime
                                 immortality.trainingSkill = ''
                             }
+
+                            if (skillIsIncreasedSpeed.exp == floor.trainedTime) {
+                                if (i+1 <= skill.floors.length - 1) {
+                                    const nextFloor = skill.floors[i+1]
+                                    skillIsIncreasedSpeed.floor = nextFloor.name
+                                    skillIsIncreasedSpeed.exp = 0
+                                }
+                            }
+
                             await Immortality.updateOne({ _id: immortality._id }, {
                                 skills: immortality.skills,
                                 trainingSkill: immortality.trainingSkill
