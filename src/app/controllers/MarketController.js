@@ -1,3 +1,5 @@
+const mongoose = require('mongoose')
+const ObjectId = mongoose.Types.ObjectId
 const { Market, Item, Equipment, Skill, User, } = require('../models')
 
 class MarketController {
@@ -55,23 +57,31 @@ class MarketController {
 
             let isEnough = true
             item.prices.items.forEach(i => {
+                console.log('Find items: ', i)
+                let have = false
                 for(let e of user.bag.items) {
                     if (e != -1) {
-                        if (e.item == i.data && e.quantity >= i.quantity) {
+                        console.log(e.item, i.data, e.quantity, i.quantity, e.item.toString() == i.data.toString(), e.quantity >= i.quantity)
+                        if (e.item.toString() == i.data.toString() && e.quantity >= i.quantity) {
                             e.quantity -= i.quantity
                             if (e.quantity <= 0) {
                                 e = -1
                             }
+                            have = true
                             break
-                        } else {
-                            isEnough = false 
                         }
                     }
+                }
+
+                if (!have) {
+                    isEnough = false
                 }
             })
 
             if (isEnough) {
                 item.prices.equips.forEach(i => {
+                    console.log('Find equips')
+                    let have = false
                     for(let e of user.bag.equipments) {
                         if (e != -1) {
                             if (e.item == i.data) {
@@ -79,17 +89,22 @@ class MarketController {
                                 if (e.quantity <= 0) {
                                     e = -1
                                 }
+                                have = true
                                 break
-                            } else {
-                                isEnough = false 
                             }
                         }
+                    }
+
+                    if (!have) {
+                        isEnough = false
                     }
                 })
             }
 
             if (isEnough) {
                 item.prices.skills.forEach(i => {
+                    console.log('Find skills')
+                    let have = false
                     for(let e of user.bag.skills) {
                         if (e != -1) {
                             if (e.item == i.data) {
@@ -97,18 +112,25 @@ class MarketController {
                                 if (e.quantity <= 0) {
                                     e = -1
                                 }
+                                have = true
                                 break
-                            } else {
-                                isEnough = false 
                             }
                         }
+                    }
+
+                    if (!have) {
+                        isEnough = false
                     }
                 })
             }
 
             if (isEnough) {
                 item.quantity -= 1
-
+                user.bag.equipments.push({
+                    equip: item[item.type],
+                    wearIs: ObjectId('000000000000000000000000'),
+                    durability: 100,
+                })
                 await User.updateOne({ _id: user._id }, { bag: user.bag })
                 await item.save()
                 return res.json({ message: 'Thành Công' })

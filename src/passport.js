@@ -30,6 +30,20 @@ passport.serializeUser((user, done) => {
                     email: user.email,
                     avatar: user.picture,
                     birth: '',
+                    bag: {
+                        items: [
+                            {
+                                item: ObjectId('64002ada2f93ddad6483a848'),
+                                quantity: 100,
+                            }
+                        ],
+                        skills: [
+                            {
+                                skill: ObjectId('63fb59420e98370cbfa62397'),
+                                quantity: 1
+                            }
+                        ]
+                    }
                 }
                 const newUser = new User(data)
                 newUser

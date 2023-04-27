@@ -354,6 +354,7 @@ class QuestController {
                 totalData,
                 locationSkill,
                 receivedAwards,
+                defense: cluster.name
             })
         } catch (error) {
             return next(error)

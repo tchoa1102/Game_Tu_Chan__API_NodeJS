@@ -144,7 +144,25 @@ class UserController {
 
             const resultFight = result.resultFight
             if (resultFight == stateFight.win) {
-                
+                // computed awards
+                if (Array.isArray(player.bag.items)) {
+                    let numberOfStone = player.bag.items.find(i => i.item.toString() == '64002ada2f93ddad6483a848')
+    
+                    if (numberOfStone) {
+                        const stoneReceived = Math.floor(numberOfStone.quantity * 0.1)
+                        numberOfStone.quantity = numberOfStone.quantity - stoneReceived
+
+                        await player.save()
+
+                        user.bag.items.forEach(i => {
+                            if (i.item.toString() == '64002ada2f93ddad6483a848') {
+                                i.quantity += stoneReceived
+                            }
+                        })
+
+                        await user.save()
+                    }
+                }
             }
 
             // Covert stateList
@@ -200,6 +218,7 @@ class UserController {
                 resultFight,
                 totalData,
                 locationSkill,
+                defense: player.name,
             })
         } catch (error) {
             return next(error)

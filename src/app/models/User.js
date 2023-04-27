@@ -20,7 +20,7 @@ const User = new Schema({
                 type: ObjectId,
                 ref: 'Item',
             },
-            quantity: Number
+            quantity: Number,
         }],
         skills: [{
             skill: {

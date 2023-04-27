@@ -108,6 +108,9 @@ class ImmortalityController {
             const skill = await Skill.findOne({ name: skillName })
             const immortality = await Immortality.findById(idImmortality)
 
+            const items = user.bag.items
+            const floor = skill.floors[0]
+
             // Start training => sub cost => full lv1
             const isExistAndEnough = floor.costs.every((cost) => items.some(item => {
                 // exist and enough
